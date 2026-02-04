@@ -1,0 +1,71 @@
+clc;
+clear;
+close all;
+
+%% Physical constants
+mu = 3.986e14;           % Earth's gravitational parameter (m^3/s^2)
+r0 = 7000e3;             % Initial distance from Earth center (7,000 km)
+
+% Circular orbit velocity
+v_circular = sqrt(mu / r0);
+
+%% Different velocity cases
+velocity_factors = [0.7, 1.0, 1.2, 1.41];
+labels = {
+    'Lower velocity (Elliptical - inward)'
+    'Circular orbit'
+    'Higher velocity (Elliptical - outward)'
+    'Escape trajectory'
+};
+
+colors = {'r', 'g', 'b', 'k'};
+
+%% Time span
+tspan = linspace(0, 8000, 5000);
+
+figure;
+hold on;
+axis equal;
+grid on;
+
+%% Loop for different velocity cases
+for i = 1:length(velocity_factors)
+    
+    % Initial position and velocity
+    r_init = [r0; 0];
+    v_init = [0; velocity_factors(i) * v_circular];
+    
+    state0 = [r_init; v_init];
+    
+    % Solve equations of motion
+    [~, state] = ode45(@(t, y) two_body_eq(t, y, mu), tspan, state0);
+    
+    % Extract position
+    x = state(:,1);
+    y = state(:,2);
+    
+    plot(x/1e3, y/1e3, colors{i}, 'LineWidth', 2);
+end
+
+%% Draw Earth
+theta = linspace(0, 2*pi, 500);
+Re = 6371; % Earth radius in km
+plot(Re*cos(theta), Re*sin(theta), 'c', 'LineWidth', 2);
+
+%% Plot settings
+xlabel('X Position (km)');
+ylabel('Y Position (km)');
+title('Effect of Velocity Change on Orbit Shape');
+legend(labels, 'Location', 'bestoutside');
+
+function dydt = two_body_eq(~, y, mu)
+
+    r = y(1:2);
+    v = y(3:4);
+
+    r_norm = norm(r);
+
+    a = -mu * r / r_norm^3;
+
+    dydt = [v; a];
+end
