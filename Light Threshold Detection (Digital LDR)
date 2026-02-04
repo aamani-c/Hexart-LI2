@@ -1,0 +1,25 @@
+//LDR Module → Arduino
+//VCC → 5V
+//GND → GND
+//DO → Pin 7)
+
+int ldrDigital = 7;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(ldrDigital, INPUT);
+}
+
+void loop() {
+
+  int lightState = digitalRead(ldrDigital);
+
+  if(lightState == LOW){
+    Serial.println("BRIGHT");
+  }
+  else{
+    Serial.println("DARK");
+  }
+
+  delay(500);
+}
