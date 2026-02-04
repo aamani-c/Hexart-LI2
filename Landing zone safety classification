@@ -1,0 +1,131 @@
+clc;
+clear;
+close all;
+
+%% ===============================
+% STEP 1: Load terrain image
+%% ===============================
+terrain = imread('moon.tif');      % Built-in MATLAB image
+terrain = im2double(terrain);
+
+if size(terrain,3) == 3
+    terrain_gray = rgb2gray(terrain);
+else
+    terrain_gray = terrain;
+end
+
+%% ===============================
+% STEP 2: Smooth terrain
+%% ===============================
+terrain_smooth = imgaussfilt(terrain_gray, 2);
+
+%% ===============================
+% STEP 3: Slope estimation
+%% ===============================
+[Gx, Gy] = gradient(terrain_smooth);
+slope = sqrt(Gx.^2 + Gy.^2);
+slope_norm = mat2gray(slope);
+
+%% ===============================
+% STEP 4: Safety classification (2D logic)
+%% ===============================
+safe_zone   = slope_norm < 0.25;
+risky_zone  = slope_norm >= 0.25 & slope_norm < 0.5;
+unsafe_zone = slope_norm >= 0.5;
+
+%% ===============================
+% STEP 5: Create 2D safety map (RGB)
+%% ===============================
+[rows, cols] = size(slope_norm);
+safety_map = zeros(rows, cols, 3);
+
+% Safe – Green
+safety_map(:,:,2) = safe_zone;
+
+% Risky – Yellow
+safety_map(:,:,1) = risky_zone;
+safety_map(:,:,2) = risky_zone;
+
+% Unsafe – Red
+safety_map(:,:,1) = unsafe_zone;
+
+%% ===============================
+% FIGURE 1: 2D ANALYSIS OUTPUTS
+%% ===============================
+figure('Color','w');
+
+subplot(2,2,1)
+imshow(terrain_gray)
+title('Original Terrain Image')
+
+subplot(2,2,2)
+imshow(slope_norm)
+title('Slope / Roughness Map')
+
+subplot(2,2,3)
+imshow(safety_map)
+title('Landing Zone Safety Classification')
+
+subplot(2,2,4)
+imshow(labeloverlay(terrain_gray, unsafe_zone, 'Transparency', 0.6))
+title('Unsafe Zones Highlighted')
+
+%% ===============================
+% STEP 6: 3D TRIANGULATED SURFACE PREP
+%% ===============================
+
+% Elevation model
+elevation = terrain_smooth * 120;
+
+% Safety levels for coloring
+% 1 = Suitable, 2 = Risky, 3 = Unsuitable, 4 = Dangerous
+safety_3D = zeros(size(slope_norm));
+safety_3D(slope_norm < 0.25) = 1;
+safety_3D(slope_norm >= 0.25 & slope_norm < 0.45) = 2;
+safety_3D(slope_norm >= 0.45 & slope_norm < 0.65) = 3;
+safety_3D(slope_norm >= 0.65) = 4;
+
+% Grid and triangulation
+[x, y] = meshgrid(1:cols, 1:rows);
+xv = x(:);
+yv = y(:);
+zv = elevation(:);
+cv = safety_3D(:);
+
+tri = delaunay(xv, yv);
+
+%% ===============================
+% FIGURE 2: 3D FLAT TRIANGULAR SURFACE
+%% ===============================
+figure('Color','k');
+
+trisurf(tri, xv, yv, zv, cv, ...
+    'EdgeColor','none', ...
+    'FaceColor','flat');
+
+view(45,30);
+axis tight;
+camlight;
+lighting flat;
+
+% Custom colormap
+cmap = [
+    0   1   0   % Suitable
+    1   1   0   % Risky
+    0.6 0.4 0.2 % Unsuitable
+    1   0   0   % Dangerous
+];
+colormap(cmap);
+caxis([1 4]);
+
+cb = colorbar;
+cb.Ticks = [1.5 2.5 3.5 4.5];
+cb.TickLabels = {'Suitable','Risky','Unsuitable','Dangerous'};
+cb.Color = 'w';
+
+title('Landing Zones Detected', 'Color', 'w');
+xlabel('X Coordinate', 'Color', 'w');
+ylabel('Y Coordinate', 'Color', 'w');
+zlabel('Elevation', 'Color', 'w');
+
+set(gca,'Color','k','XColor','w','YColor','w','ZColor','w');
