@@ -1,0 +1,59 @@
+clc;
+clear;
+close all;
+
+%% Constants
+G = 6.67430e-11;          % Gravitational constant (m^3/kg/s^2)
+
+m1 = 5.972e24;            % Mass of Earth (kg)
+m2 = 1000;                % Mass of satellite (kg)
+
+%% Initial conditions
+r1 = [0, 0];              % Earth position
+r2 = [7e6, 0];            % Satellite position (7,000 km from center); increase this value (and adjust the velocity) to observe Higher orbital radius → lower gravitational pull. 
+
+v1 = [0, 0];              % Earth velocity
+v2 = [0, 7500];           % Satellite velocity (m/s), increase this value to observe --> Higher kinetic energy → orbit becomes elliptical or open, decrease value to observe Insufficient velocity → gravity dominates → inward spiral (ie satelite crashes) 
+
+dt = 1;                   % Time step (seconds) icrease this value to observe → poor numerical accuracy.
+T = 6000;                 % Total simulation time (seconds)
+
+steps = T / dt;
+
+%% Arrays to store trajectory
+r2_history = zeros(steps, 2);
+
+%% Simulation loop
+for i = 1:steps
+    r = r2 - r1;
+    dist = norm(r);
+
+    % Gravitational force
+    F = -G * m1 * m2 / dist^3 * r;
+
+    % Acceleration
+    a2 = F / m2;
+
+    % Velocity update
+    v2 = v2 + a2 * dt;
+
+    % Position update
+    r2 = r2 + v2 * dt;
+
+    % Store position
+    r2_history(i, :) = r2;
+end
+
+%% Plot orbit
+figure;
+plot(r2_history(:,1), r2_history(:,2), 'b', 'LineWidth', 1.5);
+hold on;
+plot(0, 0, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+
+xlabel('X Position (meters)');
+ylabel('Y Position (meters)');
+title('2-Body Orbital Motion Simulation');
+axis equal;
+grid on;
+
+legend('Satellite Orbit', 'Earth');
