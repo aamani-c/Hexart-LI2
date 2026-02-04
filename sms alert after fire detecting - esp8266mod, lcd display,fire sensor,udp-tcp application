@@ -1,0 +1,74 @@
+#include <ESP8266WiFi.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <WiFiUdp.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+const char* ssid = "vivo V29";
+const char* password = "mohan@4.";
+
+#define FLAME_PIN 14   // D5
+
+WiFiUDP udp;
+IPAddress targetIP(192,168,1,100);   // ← change to your app IP
+unsigned int targetPort = 5005;      // ← change to your app port
+
+bool alertSent = false;
+
+void sendAlert() {
+  udp.beginPacket(targetIP, targetPort);
+  udp.print("FIRE ALERT DETECTED");
+  udp.endPacket();
+  Serial.println("UDP Alert Sent");
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.print("Starting...");
+  delay(500);
+
+  pinMode(FLAME_PIN, INPUT);
+
+  lcd.clear();
+  lcd.print("Connecting WiFi");
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(400);
+    Serial.print(".");
+  }
+
+  udp.begin(4210);
+
+  lcd.clear();
+  lcd.print("WiFi Connected");
+  lcd.setCursor(0,1);
+  lcd.print(WiFi.localIP());
+  delay(2000);
+}
+
+void loop() {
+  int flameValue = digitalRead(FLAME_PIN);
+
+  if (flameValue == LOW) {
+    lcd.clear();
+    lcd.print("!! FIRE ALERT !!");
+
+    if (!alertSent) {
+      sendAlert();
+      alertSent = true;
+    }
+
+  } else {
+    lcd.clear();
+    lcd.print("Status Normal");
+    alertSent = false;
+  }
+
+  delay(800);
+}
