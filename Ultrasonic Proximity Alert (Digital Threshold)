@@ -1,7 +1,7 @@
-VCC → 5V
-GND → GND
-TRIG → Pin 9
-ECHO → Pin 10
+//VCC → 5V
+//GND → GND
+//TRIG → Pin 9
+//ECHO → Pin 10
 
 
 #define trigPin 9
