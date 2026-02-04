@@ -1,0 +1,68 @@
+//Ultrasonic
+//VCC → 5V rail  
+//GND → GND rail  
+//TRIG → Pin 9  
+//ECHO → Pin 10
+
+//LDR
+//VCC → 5V rail  
+//GND → GND rail  
+//DO  → Pin 7
+
+#define trigPin 9
+#define echoPin 10
+#define ldrPin 7
+
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(ldrPin, INPUT);
+}
+
+void loop() {
+
+  // -------- ULTRASONIC --------
+  long duration;
+  float distance;
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+
+  distance = duration * 0.034 / 2;
+
+
+  // -------- LDR --------
+  int lightState = digitalRead(ldrPin);
+
+
+  // -------- DEBUG OUTPUT --------
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.print(" cm | Light: ");
+
+  if(lightState == LOW){
+    Serial.println("BRIGHT");
+  }
+  else{
+    Serial.println("DARK");
+  }
+
+
+  // -------- DECISION LOGIC --------
+  if(distance < 20 && lightState == HIGH){
+    Serial.println(">>> Object detected in DARK zone!");
+  }
+
+  Serial.println("----------------------");
+
+  delay(500);
+}
