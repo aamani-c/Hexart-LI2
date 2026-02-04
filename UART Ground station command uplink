@@ -1,0 +1,49 @@
+#sketch code (simulator: wokwi)
+#Components (virtual):
+#Arduino UNO(single board)
+#Serial monitor ( acts as ground station)
+
+unsigned long lastCmdTime = 0;
+const unsigned long TIMEOUT = 5000;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Satellite Ready");
+  lastCmdTime = millis();
+}
+
+void loop() {
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    lastCmdTime = millis();
+
+    if (command.length() == 0) {
+      Serial.println("ERROR: Empty Command");      #No input is given 
+      return;
+    }
+
+    Serial.print("Received Command: ");
+    Serial.println(command);
+
+    if (command == "DEPLOY_PANEL" || command == "ENTER_SAFE_MODE") {         #Based on imputs ,outputs are received
+      Serial.println("ACK: Command Accepted");
+    } else {
+      Serial.println("NACK: Unknown Command");
+    }
+  }
+
+  if (millis() - lastCmdTime > TIMEOUT) {
+    Serial.println("WARNING: Command Timeout");
+    lastCmdTime = millis();
+  }
+}
+
+# diagram code
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [ { "id": "uno", "type": "wokwi-arduino-uno" } ],
+  "connections": []
+}
