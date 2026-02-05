@@ -1,0 +1,19 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+battery = 6000
+motor = 900
+cpu = 250
+sensor = 150
+
+total = motor + cpu + sensor
+
+t = np.linspace(0,6,100)
+level = battery - total*t
+
+plt.plot(t, level)
+plt.axhline(0)
+plt.title("Battery Discharge Simulation")
+plt.xlabel("Time (hours)")
+plt.ylabel("mAh remaining")
+plt.show()
