@@ -1,0 +1,22 @@
+TEMPERATURE DETECTION
+
+clc;
+clear;
+
+disp('SPACE TEMPERATURE MONITORING SYSTEM');
+disp('----------------------------------');
+
+% Fixed temperature in space (in °C)
+space_temperature = -80;   % you can change this value
+
+% Threshold temperature
+threshold = -50;
+
+% Check temperature condition
+fprintf('Detected Space Temperature: %.2f °C\n', space_temperature);
+
+if space_temperature < threshold
+    disp('Status: TEMPERATURE IS LOW');
+else
+    disp('Status: TEMPERATURE IS HIGH');
+end
