@@ -1,0 +1,44 @@
+import numpy as np
+import heapq
+import matplotlib.pyplot as plt
+
+n = 25
+grid = np.zeros((n,n))
+
+np.random.seed(1)
+grid[np.random.rand(n,n) < 0.25] = 1
+
+start, goal = (0,0), (24,24)
+grid[start]=grid[goal]=0
+
+def h(a,b): return abs(a[0]-b[0])+abs(a[1]-b[1])
+
+def astar():
+    pq=[(0,start)]
+    came={}
+    g={start:0}
+
+    while pq:
+        _,cur=heapq.heappop(pq)
+        if cur==goal: break
+        for dx,dy in [(1,0),(-1,0),(0,1),(0,-1)]:
+            nx=(cur[0]+dx,cur[1]+dy)
+            if 0<=nx[0]<n and 0<=nx[1]<n and grid[nx]==0:
+                newg=g[cur]+1
+                if nx not in g or newg<g[nx]:
+                    g[nx]=newg
+                    heapq.heappush(pq,(newg+h(nx,goal),nx))
+                    came[nx]=cur
+
+    path=[]
+    p=goal
+    while p!=start:
+        path.append(p); p=came[p]
+    path.append(start)
+    return path
+
+path=astar()
+
+for x,y in path: grid[x,y]=0.5
+plt.imshow(grid)
+plt.show()
