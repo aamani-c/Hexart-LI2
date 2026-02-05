@@ -1,0 +1,35 @@
+// Wokwi simulator used 
+// Components:Arduino UNO , serial monitor 
+int battery = 100;                 // Battery percentage
+unsigned long lastUpdate = 0;
+const unsigned long interval = 2000; // 2 seconds
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("SPACECRAFT TELEMETRY SYSTEM STARTED");
+}
+
+void loop() {
+  if (millis() - lastUpdate >= interval) {
+    lastUpdate = millis();
+
+    if (battery > 0) {
+      battery--;  // Time-based degradation
+    }
+
+    // Normal telemetry
+    Serial.print("TELEMETRY|BATTERY=");
+    Serial.print(battery);
+    Serial.println("%");
+
+    // Failure conditions
+    if (battery <= 20 && battery > 0) {
+      Serial.println("WARNING|LOW_POWER");
+    }
+
+    if (battery == 0) {
+      Serial.println("ERROR|SYSTEM_SHUTDOWN");
+      while (true); // Halt system
+    }
+  }
+}
