@@ -1,0 +1,38 @@
+// MQ2 + NodeMCU ESP8266 Gas Detection
+
+#define MQ2_PIN A0
+#define LED_PIN D4     // built-in LED on many NodeMCU boards
+#define BUZZER_PIN D5  // optional
+
+int gasValue;
+int dangerThreshold = 500;   // will calibrate
+
+void setup() {
+  Serial.begin(115200);
+  
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+
+  Serial.println("MQ2 warming up...");
+  delay(15000);   // warm-up time
+}
+
+void loop() {
+
+  gasValue = analogRead(MQ2_PIN);
+
+  Serial.print("Gas Value: ");
+  Serial.println(gasValue);
+
+  if (gasValue > dangerThreshold) {
+    Serial.println("⚠️ Harmful Gas Detected");
+
+    digitalWrite(LED_PIN, LOW);   // built-in LED is inverted
+    digitalWrite(BUZZER_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+
+  delay(1000);
+}
