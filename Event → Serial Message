@@ -1,0 +1,36 @@
+//wokwi simulator
+//components used: Arduino UNO,button
+//sketch.ino 
+void setup() {
+  pinMode(7, INPUT_PULLUP);   // ESP32: use pin 4 if preferred
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (digitalRead(7) == LOW) {
+    Serial.println("EVENT");      //the output can be modified according to the needs 
+    delay(300); // debounce
+  }
+}
+
+//diagram.ino code
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": -32.2,
+      "left": -76.8,
+      "attrs": { "color": "green", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "btn1:1.r", "uno:7", "green", [ "v-9.6", "h192.2" ] ],
+    [ "btn1:1.l", "uno:GND.2", "green", [ "h9.6", "v240", "h240" ] ]
+  ],
+  "dependencies": {}
+}
