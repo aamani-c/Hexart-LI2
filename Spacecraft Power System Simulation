@@ -1,0 +1,96 @@
+clc;
+clear;
+close all;
+
+%% -------------------------------
+%  SPACECRAFT POWER SYSTEM – V2
+%  Includes battery, eclipse, and
+%  low power mode simulation
+%% -------------------------------
+
+%% Solar panel parameters
+solar_irradiance = 1361;    % W/m^2
+panel_area = 2;             % m^2
+panel_efficiency = 0.30;    % 30%
+
+%% Battery parameters
+battery_capacity = 200;     % Wh
+battery_level = 120;        % Initial battery level (Wh)
+low_power_threshold = 50;   % Wh
+
+%% Time and orbit settings
+time = 1;                   % 1 hour per step
+num_orbits = 6;
+
+%% Subsystem power consumption (W)
+communication = 20;
+navigation    = 10;
+payload       = 30;
+thermal       = 15;
+computer      = 10;
+
+%% Data storage for plotting
+battery_history = zeros(1, num_orbits);
+generation_history = zeros(1, num_orbits);
+
+for orbit = 1:num_orbits
+
+    fprintf('\n--- ORBIT %d ---\n', orbit);
+
+    %% Sunlight / Eclipse condition
+    if mod(orbit,2) == 1
+        in_sunlight = 1;   % Sunlight
+    else
+        in_sunlight = 0;   % Eclipse
+    end
+
+    %% Energy generation
+    if in_sunlight
+        energy_generated = solar_irradiance * panel_area * ...
+                           panel_efficiency * time;
+        disp('Sunlight Phase: Solar panels active');
+    else
+        energy_generated = 0;
+        disp('Eclipse Phase: Solar panels inactive');
+    end
+
+    %% Low power mode logic
+    if battery_level < low_power_threshold
+        disp('LOW POWER MODE ACTIVATED');
+        payload_used = payload * 0.5;
+        communication_used = communication * 0.7;
+    else
+        payload_used = payload;
+        communication_used = communication;
+    end
+
+    %% Energy consumption
+    total_energy_used = (communication_used + navigation + ...
+                         payload_used + thermal + computer) * time;
+
+    %% Battery update
+    battery_level = battery_level + energy_generated - total_energy_used;
+
+    % Battery limits
+    battery_level = min(battery_level, battery_capacity);
+    battery_level = max(battery_level, 0);
+
+    %% Store data
+    battery_history(orbit) = battery_level;
+    generation_history(orbit) = energy_generated;
+
+    %% Status message
+    disp(['Energy Generated : ', num2str(energy_generated), ' Wh']);
+    disp(['Energy Used      : ', num2str(total_energy_used), ' Wh']);
+    disp(['Battery Level    : ', num2str(battery_level), ' Wh']);
+    disp('Status Sent to Ground Station');
+
+end
+
+%% Plot results
+figure;
+plot(1:num_orbits, battery_history, '-o', 'LineWidth', 2);
+xlabel('Orbit Number');
+ylabel('Battery Level (Wh)');
+title('Spacecraft Battery Level Over Multiple Orbits');
+grid on;
