@@ -1,0 +1,49 @@
+#include <Wire.h>
+#include <MPU6050.h>
+
+MPU6050 mpu;
+
+float tiltAngle;
+const float TILT_LIMIT = 25.0; // degrees (safe limit)
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(8, 9); // SDA, SCL for ESP32-S2
+
+  Serial.println("Initializing Gyro...");
+  mpu.initialize();
+
+  if (!mpu.testConnection()) {
+    Serial.println("MPU6050 connection FAILED");
+    while (1);
+  }
+
+  Serial.println("MPU6050 connected successfully");
+}
+
+void loop() {
+  int16_t ax, ay, az;
+
+  // Read accelerometer data
+  mpu.getAcceleration(&ax, &ay, &az);
+
+  // Convert to g values
+  float Ax = ax / 16384.0;
+  float Ay = ay / 16384.0;
+  float Az = az / 16384.0;
+
+  // Calculate tilt angle (simple)
+  tiltAngle = atan2(Ax, sqrt(Ay * Ay + Az * Az)) * 180 / PI;
+
+  Serial.print("Tilt Angle: ");
+  Serial.print(tiltAngle);
+  Serial.print(" deg  |  ");
+
+  if (abs(tiltAngle) > TILT_LIMIT) {
+    Serial.println("⚠️ TIP-OVER WARNING!");
+  } else {
+    Serial.println("✅ Rover Stable");
+  }
+
+  delay(500);
+}
