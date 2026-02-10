@@ -1,0 +1,14 @@
+clc;
+clear;
+
+% Input distance between satellite and space debris (in km)
+distance = input('Enter distance to space debris (km): ');
+
+% Distance-based decision
+if distance > 20
+    disp('Status: SAFE');
+elseif distance > 10
+    disp('Status: WARNING');
+else
+    disp('Status: COLLISION RISK');
+end
