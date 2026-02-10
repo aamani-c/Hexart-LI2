@@ -1,0 +1,45 @@
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+height = 0
+velocity = 0
+fuel = 100          # total fuel
+
+gravity = -9.8
+thrust_power = 18   # engine power
+
+dt = 0.1
+
+fig, ax = plt.subplots()
+ax.set_ylim(0, 2000)
+ax.set_xlim(0, 10)
+
+rocket, = ax.plot([5], [height], marker='^', markersize=14)
+
+text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+
+def update(frame):
+    global height, velocity, fuel
+    
+    # Engine only works if fuel exists
+    if fuel > 0:
+        thrust = thrust_power
+        fuel -= 0.5
+    else:
+        thrust = 0
+    
+    acceleration = thrust + gravity
+    
+    velocity += acceleration * dt
+    height += velocity * dt
+    
+    rocket.set_data([5], [height])
+    
+    text.set_text(f"Height: {int(height)} m\nFuel: {int(fuel)}")
+    
+    return rocket, text
+
+ani = FuncAnimation(fig, update, interval=50)
+
+plt.title("Rocket Launch — With Fuel Burn")
+plt.show()
