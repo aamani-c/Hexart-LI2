@@ -1,0 +1,45 @@
+VCC --> 5v 
+TRIG --> D6 
+ECHO --> D5
+GND --> GND
+
+Red (VCC) --> Arduino 5V
+Brown (GND) --> Arduino GND
+Yellow (Signal) --> Arduino D9
+
+
+#include <Servo.h>
+Servo lid;
+int trigPin = 6;
+int echoPin = 5;
+
+void setup() {
+  lid.attach(9);      
+  lid.write(0);      // Lid closed
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+}
+
+void loop() {
+
+  // Send ultrasonic pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);        // ultrasonic sensor need very small, microsecond-level timing for its trigger pulse and millisecond(delay() ) will be more for it 
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure echo time
+  long t = pulseIn(echoPin, HIGH);
+  int d = t * 0.034 / 2;   // distance in cm
+
+  // Open lid if anything is sensed
+  if (d > 0 && d < 15) {
+    lid.write(90);   // open
+    delay(2000);   
+  } else {
+    lid.write(0);    // close
+  }
+  delay(100);
+}
