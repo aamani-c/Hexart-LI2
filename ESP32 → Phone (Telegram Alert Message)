@@ -1,0 +1,30 @@
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+#include <ESP8266WiFi.h>
+
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* botToken = "YOUR_BOT_TOKEN";   // from BotFather
+const String chatID = "YOUR_CHAT_ID";      // from @userinfobot
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(botToken, client);
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  client.setInsecure();  // Skip certificate validation
+
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected!");
+
+  bot.sendMessage(chatID, "Hello! Telegram Bot is working.", "");
+}
+
+void loop() {
+  // Nothing here, single test message only
+}
