@@ -1,0 +1,70 @@
+clc;
+clear;
+close all;
+
+% -----------------------------------------
+% PLANET ROTATION vs DAY LENGTH SIMULATOR
+% -----------------------------------------
+
+% -----------------------------------------
+% USER-CONTROL PARAMETERS (CHANGE THESE)
+% -----------------------------------------
+
+R = 6.371e6;        % Planet radius (meters) - does not affect day length
+omega = 7.292e-5;   % Angular velocity (rad/s) [Earth default]
+
+% Try increasing omega:
+% omega = 1.5 * 7.292e-5;   % Faster rotation → shorter day
+% omega = 0.5 * 7.292e-5;   % Slower rotation → longer day
+% omega = 2 * 7.292e-5;     % Very fast spinning planet
+
+% -----------------------------------------
+% TIME SETTINGS
+% -----------------------------------------
+
+T_day = (2*pi)/omega;      % Day length in seconds
+T_hours = T_day / 3600;    % Convert to hours
+
+fprintf('Day Length = %.2f hours\n', T_hours);
+
+t = linspace(0, T_day, 1000);   % One full rotation
+
+% -----------------------------------------
+% ROTATION ANGLE
+% -----------------------------------------
+
+theta = omega * t;   % Angular position
+
+% -----------------------------------------
+% PLOT 1: ANGLE vs TIME
+% -----------------------------------------
+
+figure;
+plot(t/3600, theta, 'LineWidth',2);
+xlabel('Time (hours)');
+ylabel('Rotation Angle (radians)');
+title('Planet Rotation Angle vs Time');
+grid on;
+
+% -----------------------------------------
+% ANIMATION OF ROTATING PLANET
+% -----------------------------------------
+
+figure;
+for i = 1:length(t)
+    
+    x = R * cos(theta(i));
+    y = R * sin(theta(i));
+    
+    plot(0,0,'ko','MarkerSize',10,'MarkerFaceColor','k');
+    hold on;
+    plot(x,y,'ro','MarkerSize',8,'MarkerFaceColor','r');
+    
+    viscircles([0 0], R,'Color','b');
+    
+    axis equal;
+    axis([-R R -R R]);
+    title('Planet Rotation Simulation');
+    drawnow;
+    hold off;
+end
