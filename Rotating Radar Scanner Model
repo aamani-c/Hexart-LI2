@@ -1,0 +1,20 @@
+int L1 = 2;
+int L2 = 3;
+int R1 = 4;
+int R2 = 5;
+void setup()
+{
+  pinMode(L1, OUTPUT);
+  pinMode(L2, OUTPUT);
+  pinMode(R1, OUTPUT);
+  pinMode(R2, OUTPUT);
+}
+
+void loop()
+{
+  digitalWrite(L1, HIGH);
+  digitalWrite(L2, LOW);
+  digitalWrite(R1, HIGH);
+  digitalWrite(R2, LOW);
+  
+}
