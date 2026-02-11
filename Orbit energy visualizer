@@ -1,0 +1,106 @@
+clc;
+clear;
+close all;
+
+% ---------------------------------------
+% ORBIT ENERGY VISUALIZER
+% ---------------------------------------
+
+% Universal constant
+G = 6.674e-11;
+
+% ---------------------------------------
+% PLANET PARAMETERS (CHANGE THESE)
+% ---------------------------------------
+M = 5.972e24;      % Mass of Earth (kg)
+m = 1000;          % Satellite mass (kg)
+
+% Try changing:
+% M = 6.39e23;      % Mars mass
+% m = 500;          % Smaller satellite
+
+R = 6.371e6;       % Planet radius
+
+% ---------------------------------------
+% INITIAL CONDITIONS (MAIN CONTROL)
+% ---------------------------------------
+r0 = [R + 4e6; 0];     % Initial position (meters)
+v0 = [0; 7500];        % Initial velocity (m/s)
+
+% Try changing velocity:
+% v0 = [0; 6000];      % Elliptical orbit
+% v0 = [0; 7900];      % Near circular orbit
+% v0 = [0; 11000];     % Escape trajectory
+
+% ---------------------------------------
+% SIMULATION SETTINGS
+% ---------------------------------------
+dt = 1;                 % Time step (reduce for accuracy)
+T = 10000;              % Total simulation time
+steps = T/dt;
+
+% ---------------------------------------
+% INITIALIZE VARIABLES
+% ---------------------------------------
+r = zeros(2, steps);
+v = zeros(2, steps);
+KE = zeros(1, steps);
+PE = zeros(1, steps);
+TE = zeros(1, steps);
+
+r(:,1) = r0;
+v(:,1) = v0;
+
+% ---------------------------------------
+% NUMERICAL INTEGRATION (Euler Method)
+% ---------------------------------------
+for i = 1:steps-1
+    
+    distance = norm(r(:,i));
+    
+    acceleration = -G*M*r(:,i)/(distance^3);
+    
+    v(:,i+1) = v(:,i) + acceleration*dt;
+    r(:,i+1) = r(:,i) + v(:,i)*dt;
+    
+    speed = norm(v(:,i));
+    
+    KE(i) = 0.5*m*speed^2;
+    PE(i) = -G*M*m/distance;
+    TE(i) = KE(i) + PE(i);
+end
+
+% ---------------------------------------
+% PLOTTING ORBIT
+% ---------------------------------------
+figure;
+plot(r(1,:), r(2,:), 'b');
+hold on;
+viscircles([0 0], R,'Color','k');
+axis equal;
+xlabel('X Position (m)');
+ylabel('Y Position (m)');
+title('Orbital Path');
+grid on;
+
+% ---------------------------------------
+% PLOTTING ENERGY CURVES
+% ---------------------------------------
+time = 0:dt:T-dt;
+
+figure;
+plot(time, KE, 'r','LineWidth',1.5);
+hold on;
+plot(time, PE, 'b','LineWidth',1.5);
+plot(time, TE, 'k','LineWidth',2);
+
+legend('Kinetic Energy','Potential Energy','Total Energy');
+xlabel('Time (s)');
+ylabel('Energy (Joules)');
+title('Energy Conservation in Orbit');
+grid on;
+
+% ---------------------------------------
+% DISPLAY TOTAL ENERGY VARIATION
+% ---------------------------------------
+fprintf('Max Total Energy Variation: %.5e J\n', max(TE)-min(TE));
