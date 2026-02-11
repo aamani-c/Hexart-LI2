@@ -1,0 +1,92 @@
+clc;
+clear;
+close all;
+
+% -----------------------------------------
+% ESCAPE VELOCITY SIMULATOR
+% -----------------------------------------
+
+% Universal constants
+G = 6.674e-11;          % Gravitational constant
+
+% -----------------------------------------
+% PLANET PARAMETERS (CHANGE THESE TO OBSERVE EFFECT)
+% -----------------------------------------
+M = 5.972e24;           % Planet mass (Earth mass in kg)
+R = 6.371e6;            % Planet radius (Earth radius in meters)
+%change planet mass, radius and velocity to observe the changes
+% Try changing:
+% M = 6.39e23;         % Mars mass
+% R = 3.39e6;          % Mars radius
+
+% -----------------------------------------
+% LAUNCH PARAMETERS (MAIN CONTROL VARIABLE)
+% -----------------------------------------
+v0 = 9000;              % Initial velocity (m/s)
+
+% Try changing:
+% v0 = 5000;            % Below escape velocity
+% v0 = 11186;           % Approx Earth escape velocity
+% v0 = 13000;           % Greater than escape velocity
+
+% -----------------------------------------
+% SIMULATION SETTINGS
+% -----------------------------------------
+dt = 0.5;               % Time step (reduce for more accuracy)
+T = 2000;               % Total simulation time
+time = 0:dt:T;
+
+% -----------------------------------------
+% INITIAL CONDITIONS
+% -----------------------------------------
+r = zeros(size(time));
+v = zeros(size(time));
+
+r(1) = R;               % Start at planet surface
+v(1) = v0;
+
+% -----------------------------------------
+% NUMERICAL INTEGRATION (Euler Method)
+% -----------------------------------------
+for i = 1:length(time)-1
+    
+    a = -G*M/(r(i)^2);      % Gravitational acceleration
+    
+    v(i+1) = v(i) + a*dt;
+    r(i+1) = r(i) + v(i)*dt;
+    
+    % Stop if object hits planet
+    if r(i+1) <= R
+        r(i+1:end) = R;
+        break;
+    end
+end
+
+% -----------------------------------------
+% ESCAPE VELOCITY CALCULATION
+% -----------------------------------------
+v_escape = sqrt(2*G*M/R);
+
+fprintf('Escape Velocity = %.2f m/s\n', v_escape);
+fprintf('Initial Velocity = %.2f m/s\n', v0);
+
+% -----------------------------------------
+% PLOTTING
+% -----------------------------------------
+figure;
+plot(time, r - R, 'LineWidth',2);
+xlabel('Time (seconds)');
+ylabel('Altitude (meters)');
+title('Escape Velocity Simulation');
+grid on;
+
+% -----------------------------------------
+% RESULT INTERPRETATION
+% -----------------------------------------
+if v0 < v_escape
+    disp('Result: Object will fall back (Bound motion)');
+elseif abs(v0 - v_escape) < 100
+    disp('Result: Borderline Escape');
+else
+    disp('Result: Object Escapes Planet');
+end
