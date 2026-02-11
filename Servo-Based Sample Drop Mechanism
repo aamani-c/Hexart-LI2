@@ -1,0 +1,23 @@
+#include <Servo.h>
+Servo gate;
+int irPin = 2;    
+int gatePin = 9; 
+
+void setup() {
+  gate.attach(gatePin);
+  pinMode(irPin, INPUT);
+  gate.write(0);          // Gate closed initially
+}
+
+void loop() {
+  int detected = digitalRead(irPin);
+
+  // LOW = object detected
+  // HIGH = object not detected 
+  if (detected == LOW) {
+    gate.write(70);      // Open gate
+    delay(500);         //  sample drop
+    gate.write(0);      // Close gate
+    delay(2000);        // Cooldown to avoid multiple triggers
+  }
+}
