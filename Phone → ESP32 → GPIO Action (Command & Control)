@@ -1,0 +1,56 @@
+/* 
+Here we have created command for controlling Led (on/ off)
+components used : ESP32, LED, 220 ohm resistor,jumper wires
+GPIO 2-->LED Positive (Long leg)
+GND	Resistor → LED Negative (Short leg)
+once we upload the code, IP address is found in serial monitor , open it using a browser ,
+In the webpage we will get the command links to control the hardware(LED)
+*/
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+WebServer server(80);
+
+const int ledPin = 4;
+
+void handleRoot() {
+  String page = "<h1>ESP32 Control</h1>";
+  page += "<p><a href=\"/on\">Turn LED ON</a></p>";
+  page += "<p><a href=\"/off\">Turn LED OFF</a></p>";
+  server.send(200, "text/html", page);
+}
+
+void handleOn() {
+  digitalWrite(ledPin, HIGH);
+  server.send(200, "text/html", "<h1>LED ON</h1><a href=\"/\">Back</a>");
+}
+
+void handleOff() {
+  digitalWrite(ledPin, LOW);
+  server.send(200, "text/html", "<h1>LED OFF</h1><a href=\"/\">Back</a>");
+}
+
+void setup() {
+  Serial.begin(9600);  //can also set baud rate 115200
+  pinMode(ledPin, OUTPUT);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot);
+  server.on("/on", handleOn);
+  server.on("/off", handleOff);
+
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
