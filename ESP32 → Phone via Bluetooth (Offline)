@@ -3,6 +3,9 @@ in order to receive the message via bluetooth we install serial bluetooth termin
 once the code is uploaded we must pair the esp32_space_node via bluetooth to phone ,
 then open serial bluetooth terminal and connect the esp32_space_node,
 when the button is pressed, we get the message in the bluetooth terminal
+Components used: ESP32, push button,jumper wires 
+switch one end --> ESP32 GPIO5
+switch other end--> ESP32 GND (if three pin then middle pin--> Vin)
 */
 
 #include "BluetoothSerial.h"
