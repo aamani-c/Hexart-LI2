@@ -1,0 +1,62 @@
+clc; clear; close all;
+
+Re = 6371;          % Earth radius (km)
+mu = 398600;        % Earth's gravitational parameter (km^3/s^2)
+T_total = 5400;     % 1.5 hours
+dt = 1;             % 1 second steps
+N = T_total/dt;
+
+%  Initial Conditions 
+alt0 = 400;         % Altitude (km)
+r0 = Re + alt0;
+v0 = sqrt(mu/r0);   % Circular velocity
+
+% State vectors
+pos = [r0; 0];
+vel = [0; v0];
+
+% Pre-allocate Telemetry Arrays 
+time = (1:N)*dt;
+alt_telemetry = zeros(N,1);
+temp_telemetry = zeros(N,1);
+batt_telemetry = zeros(N,1);
+
+% Simulation Loop 
+for i = 1:N
+    r_norm = norm(pos);
+    accel = -mu * pos / r_norm^3;
+    
+    %  (Semi-implicit Euler for better stability)
+    vel = vel + accel * dt;
+    pos = pos + vel * dt;
+    
+    % 1. Record Altitude (with slight sensor "noise")
+    alt_telemetry(i) = (norm(pos) - Re) + randn*0.05; 
+    
+    % 2. Simulate Temperature (Fluctuates as it hits sun/shadow)
+    % Using a sine wave to simulate orbital day/night cycles
+    temp_telemetry(i) = 20 + 30*sin(2*pi*i/N) + randn*0.5;
+    
+    % 3. Simulate Battery (Discharges slightly, then recharges)
+    batt_telemetry(i) = 85 + 5*cos(2*pi*i/N); 
+end
+
+% MISSION CONTROL DASHBOARD
+figure('Name', 'Spacecraft Telemetry Dashboard', 'Color', [0.1 0.1 0.1]);
+
+% Plot 1: Altitude
+subplot(3,1,1);
+plot(time/60, alt_telemetry, 'c', 'LineWidth', 1.5);
+ylabel('Alt (km)'); grid on; set(gca, 'Color', 'k', 'XColor', 'w', 'YColor', 'w');
+title('LIVE TELEMETRY FEED', 'Color', 'w');
+
+% Plot 2: Thermal Sensor
+subplot(3,1,2);
+plot(time/60, temp_telemetry, 'r', 'LineWidth', 1.5);
+ylabel('Temp (°C)'); grid on; set(gca, 'Color', 'k', 'XColor', 'w', 'YColor', 'w');
+
+% Plot 3: Battery Voltage
+subplot(3,1,3);
+plot(time/60, batt_telemetry, 'g', 'LineWidth', 1.5);
+xlabel('Time (minutes)'); ylabel('Battery (%)'); 
+grid on; set(gca, 'Color', 'k', 'XColor', 'w', 'YColor', 'w');
