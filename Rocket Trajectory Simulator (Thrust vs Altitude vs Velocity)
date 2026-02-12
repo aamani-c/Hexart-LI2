@@ -1,0 +1,74 @@
+clc; clear; close all;
+
+g = 9.81;        % gravity (m/s^2)
+m = 50000;       % rocket mass (kg)
+Cd = 0.5;        % drag coefficient (simplified)
+A = 10;          % cross-sectional area (m^2)
+rho = 1.2;       % air density (kg/m^3)
+
+dt = 0.1;        % time step (s)
+T = 120;         % total simulation time (s)
+N = T/dt;
+
+% Pre-allocate
+time = (0:N-1)*dt;
+alt = zeros(N,1);     % altitude (m)
+vel = zeros(N,1);     % velocity (m/s)
+acc = zeros(N,1);     % acceleration (m/s^2)
+thrust = zeros(N,1);  % thrust (N)
+
+% Thrust Profile (Engine ON for 60 seconds)
+for i = 1:N
+    if time(i) <= 60
+        thrust(i) = 1.5e6;   % constant thrust (N)
+    else
+        thrust(i) = 0;      % engine cutoff
+    end
+end
+
+% Simulation Loop
+for i = 2:N
+    % Drag force (opposes direction of motion)
+    drag = 0.5 * rho * Cd * A * vel(i-1)^2 * sign(vel(i-1));
+    
+    % Net force = Thrust - Gravity - Drag
+    F_net = thrust(i) - m*g - drag;
+    
+    % Acceleration (Newton's 2nd law)
+    acc(i) = F_net / m;
+    
+    % Update velocity and altitude (numerical integration)
+    vel(i) = vel(i-1) + acc(i)*dt;
+    alt(i) = alt(i-1) + vel(i)*dt;
+    
+    % Prevent rocket from going below ground
+    if alt(i) < 0
+        alt(i) = 0;
+        vel(i) = 0;
+    end
+end
+
+% Plots 
+figure;
+
+subplot(4,1,1)
+plot(time, alt/1000, 'b', 'LineWidth', 1.5)
+ylabel('Altitude (km)')
+grid on; title('Rocket Trajectory Simulation')
+
+subplot(4,1,2)
+plot(time, vel, 'r', 'LineWidth', 1.5)
+ylabel('Velocity (m/s)')
+grid on;
+
+subplot(4,1,3)
+plot(time, acc, 'g', 'LineWidth', 1.5)
+ylabel('Acceleration (m/s^2)')
+grid on;
+
+subplot(4,1,4)
+plot(time, thrust/1e6, 'r', 'LineWidth', 2)
+xlabel('Time (s)')
+ylabel('Thrust (MN)')  
+grid on;
+
