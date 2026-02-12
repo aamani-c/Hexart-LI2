@@ -1,0 +1,41 @@
+/*
+in order to receive the message via bluetooth we install serial bluetooth terminal by Kai Morich for android .
+once the code is uploaded we must pair the esp32_space_node via bluetooth to phone ,
+then open serial bluetooth terminal and connect the esp32_space_node,
+when the button is pressed, we get the message in the bluetooth terminal
+*/
+
+#include "BluetoothSerial.h"
+
+BluetoothSerial SerialBT;
+
+const int buttonPin = 5;
+bool lastButtonState = HIGH;
+
+void setup() {
+  Serial.begin(115200);     //if not stable use baud rate 9600
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  SerialBT.begin("ESP32_Space_Node");  
+  Serial.println("Bluetooth device started. Pair and connect.");
+}
+
+void loop() {
+
+  bool currentButtonState = digitalRead(buttonPin);
+
+  // Detect button press (HIGH → LOW transition)
+  if (lastButtonState == HIGH && currentButtonState == LOW) {
+
+    if (SerialBT.hasClient()) {
+      SerialBT.println("🚀 Space Event Triggered!");
+      Serial.println("Message sent via Bluetooth");
+    } else {
+      Serial.println("No Bluetooth device connected");
+    }
+
+    delay(300);  // simple debounce
+  }
+
+  lastButtonState = currentButtonState;
+}
