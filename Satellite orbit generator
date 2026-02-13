@@ -1,0 +1,98 @@
+import math
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+# ---------------- PLANET ----------------
+G = 1
+planet_mass = 1000
+planet_radius = 20
+
+dt = 0.02   # faster universe
+
+x, y = 120, 0
+
+launch_speed = 5
+launch_angle = 90
+
+angle = math.radians(launch_angle)
+
+vx = launch_speed * math.cos(angle)
+vy = launch_speed * math.sin(angle)
+
+xs = [x]
+ys = [y]
+
+orbit_crossings = 0
+
+# ---------------- GRAPH ----------------
+fig, ax = plt.subplots(figsize=(6,6))
+
+ax.set_xlim(-400, 400)
+ax.set_ylim(-400, 400)
+ax.set_aspect('equal')
+
+planet = plt.Circle((0,0), planet_radius)
+ax.add_patch(planet)
+
+orbit_line, = ax.plot([], [], lw=2)
+satellite_dot, = ax.plot([], [], 'o', markersize=6)
+
+ax.set_title("Orbit Simulator")
+
+
+# ---------------- UPDATE ----------------
+def update(frame):
+    global x, y, vx, vy, orbit_crossings
+
+    for _ in range(40): 
+
+        r = math.sqrt(x*x + y*y)
+
+        ax_g = -G * planet_mass * x / r**3
+        ay_g = -G * planet_mass * y / r**3
+
+        vx += ax_g * dt
+        vy += ay_g * dt
+
+        x += vx * dt
+        y += vy * dt
+
+        xs.append(x)
+        ys.append(y)
+
+        # ---- crash ----
+        if r < planet_radius:
+            print("Crashed!")
+            ani.event_source.stop()
+            break
+
+        # ---- escape ----
+        total_energy = 0.5*(vx**2 + vy**2) - (G*planet_mass)/r
+
+        if total_energy > 0 and r > 350:
+            print("Escaped Orbit!")
+            ani.event_source.stop()
+            break
+
+        # ---- orbit detection ----
+        if y > 0 and ys[-2] <= 0:
+            orbit_crossings += 1
+            if orbit_crossings >= 2:
+                print("Orbit complete!")
+                ani.event_source.stop()
+                break
+
+    orbit_line.set_data(xs, ys)
+    satellite_dot.set_data([x], [y])
+
+    return orbit_line, satellite_dot
+
+
+ani = FuncAnimation(
+    fig,
+    update,
+    interval=30,
+    blit=True
+)
+
+plt.show()
