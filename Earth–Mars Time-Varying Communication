@@ -1,0 +1,114 @@
+clc;
+clear;
+close all;
+
+%% ==========================================
+% REALISTIC EARTH–MARS COMMUNICATION MODEL
+% ==========================================
+
+% Physical constants
+c = 3e8;                   
+k = 1.38e-23;              
+T = 290;                   
+
+% Carrier frequency (X-band)
+f = 8e9;                   
+lambda = c / f;
+
+%% ==========================================
+% DEEP SPACE LINK PARAMETERS (Corrected)
+% ==========================================
+
+Pt = 2000;         % 2000 Watts transmit power
+Gt = 1e6;          % High gain antenna (70m class)
+Gr = 1e6;          % High gain antenna
+B  = 1e4;          % 10 kHz bandwidth (narrowband)
+
+noise_power = k * T * B;
+
+%% ==========================================
+% TIME SIMULATION (2 YEARS)
+% ==========================================
+
+time = linspace(0, 730, 1000);  % days
+
+% Earth–Mars realistic distance variation
+min_dist = 5.6e10;   % 56 million km (meters)
+max_dist = 4e11;     % 400 million km (meters)
+
+distance = (max_dist + min_dist)/2 + ...
+           (max_dist - min_dist)/2 .* cos(2*pi*time/780);
+
+%% ==========================================
+% FRIIS TRANSMISSION EQUATION
+% ==========================================
+
+Pr = Pt .* Gt .* Gr .* (lambda ./ (4*pi*distance)).^2;
+
+%% ==========================================
+% SNR CALCULATION
+% ==========================================
+
+SNR_linear = Pr ./ noise_power;
+SNR_dB = 10 * log10(SNR_linear);
+
+%% ==========================================
+% BER (BPSK)
+% ==========================================
+
+BER = 0.5 * erfc(sqrt(SNR_linear));
+BER_threshold = 1e-5;
+
+%% ==========================================
+% PLOTS
+% ==========================================
+
+% Distance Plot
+figure('Name','Distance vs Time','NumberTitle','off');
+plot(time, distance/1e9, 'LineWidth',2);
+title('Earth–Mars Distance vs Time');
+xlabel('Time (Days)');
+ylabel('Distance (Million km)');
+grid on;
+drawnow;
+
+% SNR Plot
+figure('Name','SNR vs Time','NumberTitle','off');
+plot(time, SNR_dB, 'LineWidth',2);
+title('SNR vs Time');
+xlabel('Time (Days)');
+ylabel('SNR (dB)');
+grid on;
+drawnow;
+
+% BER Plot
+figure('Name','BER vs Time','NumberTitle','off');
+semilogy(time, BER, 'LineWidth',2);
+hold on;
+yline(BER_threshold,'--','BER Threshold');
+ylim([1e-8 1]);
+title('BER vs Time');
+xlabel('Time (Days)');
+ylabel('Bit Error Rate');
+grid on;
+drawnow;
+
+%% ==========================================
+% BLACKOUT DETECTION
+% ==========================================
+
+blackout = BER > BER_threshold;
+
+disp(' ');
+disp('=== REALISTIC EARTH–MARS LINK ANALYSIS ===');
+
+fprintf('Maximum SNR: %.2f dB\n', max(SNR_dB));
+fprintf('Minimum SNR: %.2f dB\n', min(SNR_dB));
+
+if any(blackout)
+    disp('Temporary communication blackout occurs when planets are far apart.');
+else
+    disp('Communication remains stable throughout orbit.');
+end
+
+disp('Simulation complete.');
