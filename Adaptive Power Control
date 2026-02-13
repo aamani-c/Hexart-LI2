@@ -1,0 +1,80 @@
+%% Adaptive Power Control - Smooth SNR and BER
+clc; clear; close all;
+
+%% Simulation Parameters
+T = 30;              % Total simulation time (s)
+Fs = 10;             % Updates per second
+t = 0:1/Fs:T;        % Time vector
+N = length(t);
+
+%% Link Budget Parameters
+Pt_init = 20;        % Initial transmit power (dBm)
+Pt_max = 40;         % Maximum transmit power (dBm)
+Gt = 15;             % Transmit antenna gain (dBi)
+Gr = 10;             % Receive antenna gain (dBi)
+f = 2e9;             % Frequency (Hz)
+NoiseFloor = -100;   % Noise floor (dBm)
+BER_thresh = 0.02;   % BER threshold for adaptive control
+
+%% Distance profile (slower growth to prevent SNR dropping too fast)
+d = linspace(1e3, 1.5e4, N);  % 1 km → 15 km
+
+%% Preallocate arrays
+PL = zeros(1,N);
+Pr = zeros(1,N);
+SNR = zeros(1,N);
+BER = zeros(1,N);
+Pt_dynamic = zeros(1,N);
+
+%% Initial Transmit Power
+Pt_current = Pt_init;
+
+%% Create Figure
+figure('Color','w','Position',[100 100 1200 400]);
+
+subplot(1,3,1);
+tx_plot = plot(0, Pt_current,'b','LineWidth',2);
+ylim([Pt_init-5 Pt_max+5]); grid on;
+xlabel('Time (s)'); ylabel('Transmit Power (dBm)');
+title('Adaptive Transmit Power');
+
+subplot(1,3,2);
+ber_plot = plot(0,0,'r','LineWidth',2);
+ylim([0 0.05]); grid on;
+xlabel('Time (s)'); ylabel('BER');
+title('Bit Error Rate');
+
+subplot(1,3,3);
+snr_plot = plot(0,0,'k','LineWidth',2);
+ylim([0 60]); grid on;
+xlabel('Time (s)'); ylabel('SNR (dB)');
+title('SNR');
+
+%% Real-Time Adaptive Loop
+for k = 1:N
+    % Free-space path loss
+    PL(k) = 20*log10(d(k)) + 20*log10(f) - 147.55;
+    
+    % Received power
+    Pr(k) = Pt_current + Gt + Gr - PL(k);
+    
+    % SNR and BER
+    SNR(k) = Pr(k) - NoiseFloor;
+    BER(k) = 0.5 * exp(-0.1*SNR(k));
+    
+    % Adaptive power: proportional to BER error
+    if BER(k) > BER_thresh
+        % Increase power proportionally to how much BER exceeds threshold
+        delta_Pt = 5 * (BER(k)/BER_thresh); 
+        Pt_current = min(Pt_current + delta_Pt, Pt_max); % Limit max power
+    end
+    Pt_dynamic(k) = Pt_current;
+    
+    % Update plots
+    set(tx_plot,'XData',t(1:k),'YData',Pt_dynamic(1:k));
+    set(ber_plot,'XData',t(1:k),'YData',BER(1:k));
+    set(snr_plot,'XData',t(1:k),'YData',SNR(1:k));
+    
+    drawnow;
+    pause(0.05);
+end
