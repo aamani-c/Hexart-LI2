@@ -1,0 +1,74 @@
+clc;
+clear;
+close all;
+
+%% Adjustable Parameters
+N_bits = 5e5;          % Number of bits (adjust here)
+rep_factor = 3;        % Repetition factor (1,3,5,7)
+EbN0_dB = 0:1:12;      % SNR range
+
+%% Preallocate
+BER_uncoded = zeros(size(EbN0_dB));
+BER_coded = zeros(size(EbN0_dB));
+
+%% Generate random bits
+bits = randi([0 1], 1, N_bits);
+bpsk = 2*bits - 1;
+
+%% Setup Figure
+figure('Color','w');
+hold on;
+grid on;
+xlabel('E_b/N_0 (dB)');
+ylabel('Bit Error Rate (BER)');
+title(['Dynamic BER Simulation (Repetition n = ', num2str(rep_factor), ')']);
+set(gca,'YScale','log');
+
+h1 = plot(NaN,NaN,'bo-','LineWidth',2);
+h2 = plot(NaN,NaN,'rs-','LineWidth',2);
+
+legend('Uncoded','Repetition Coded','Location','southwest');
+
+%% Simulation Loop (Animated)
+for i = 1:length(EbN0_dB)
+
+    EbN0 = 10^(EbN0_dB(i)/10);
+    N0 = 1/EbN0;
+    noise_std = sqrt(N0/2);
+
+    %% Uncoded
+    noise = noise_std * randn(1,N_bits);
+    rx = bpsk + noise;
+    detected = rx > 0;
+    BER_uncoded(i) = sum(detected ~= bits)/N_bits;
+
+    %% Repetition Coding
+    coded_bits = repelem(bits, rep_factor);
+    coded_bpsk = 2*coded_bits - 1;
+
+    noise_coded = noise_std * randn(1,length(coded_bpsk));
+    rx_coded = coded_bpsk + noise_coded;
+    detected_coded = rx_coded > 0;
+
+    % Majority decoding
+    detected_matrix = reshape(detected_coded, rep_factor, []);
+    decoded = sum(detected_matrix) > rep_factor/2;
+
+    BER_coded(i) = sum(decoded ~= bits)/N_bits;
+
+    %% Update Graph (Animated)
+    set(h1,'XData',EbN0_dB(1:i),'YData',BER_uncoded(1:i));
+    set(h2,'XData',EbN0_dB(1:i),'YData',BER_coded(1:i));
+
+    drawnow;
+end
+
+%% Coding Gain Calculation
+target_BER = 1e-3;
+
+uncoded_interp = interp1(BER_uncoded,EbN0_dB,target_BER,'linear','extrap');
+coded_interp = interp1(BER_coded,EbN0_dB,target_BER,'linear','extrap');
+
+coding_gain = uncoded_interp - coded_interp;
+
+fprintf('\nCoding Gain at BER = 10^-3 ≈ %.2f dB\n',coding_gain);
