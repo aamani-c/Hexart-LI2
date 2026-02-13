@@ -1,0 +1,32 @@
+%% Communication Window Analysis - Multiple Blackouts
+clc; clear; close all;
+
+%% Step 1: Parameters
+T_orbit = 60;           % Orbital period in minutes (shorter for example)
+num_orbits = 5;         % Number of orbits to simulate
+N = 1000;               % Number of points per orbit
+
+t = linspace(0, T_orbit*num_orbits, N*num_orbits);  % Time vector
+
+%% Step 2: Spacecraft angular position
+theta = 2*pi*(t/T_orbit);   % Angle wraps each orbit
+
+%% Step 3: Planet blockage
+planet_radius = pi/4;        % Angle covered by planet blocking communication
+signal = ones(1,length(t));
+
+% Block signal whenever spacecraft is behind planet
+% Behind position centered at pi for each orbit
+theta_mod = mod(theta, 2*pi);           % Wrap angle 0 -> 2pi
+blocked_idx = (theta_mod >= pi - planet_radius/2) & ...
+              (theta_mod <= pi + planet_radius/2);
+signal(blocked_idx) = 0;
+
+%% Step 4: Plot
+figure('Color','w','Position',[100 100 1000 400]);
+stairs(t, signal,'LineWidth',2);
+ylim([-0.1 1.1]);
+grid on;
+xlabel('Time (minutes)');
+ylabel('Signal Status (1=Available, 0=Blocked)');
+title('Communication Window Analysis - Multiple Orbits');
