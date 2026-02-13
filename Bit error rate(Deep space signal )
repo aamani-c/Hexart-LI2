@@ -1,0 +1,102 @@
+clc;
+clear;
+close all;
+
+%% ==========================================
+%   DEEP SPACE COMMUNICATION (CORRECT MODEL)
+% ==========================================
+
+% Initial transmitted signal strength
+S0 = 100;
+
+% Attenuation constant
+k = 0.005;
+
+% Distance range (Million km)
+distance = 0:1:2000;
+
+% Clean received signal (Exponential attenuation model)
+signal_clean = S0 * exp(-k * distance);
+
+%% ------------------------------------------
+% Noise Parameters (AWGN)
+% ------------------------------------------
+
+noise_std = 5;                 % Standard deviation
+noise_variance = noise_std^2;  % Average noise power
+
+%% ------------------------------------------
+% Compute SNR (Correct Way)
+% SNR = Signal Power / Noise Variance
+% ------------------------------------------
+
+signal_power = signal_clean.^2;
+SNR_linear = signal_power ./ noise_variance;
+SNR_dB = 10 * log10(SNR_linear);
+
+%% ------------------------------------------
+% Compute BER (BPSK theoretical)
+% BER = 0.5 * erfc(sqrt(SNR))
+% ------------------------------------------
+
+BER = 0.5 * erfc(sqrt(SNR_linear));
+
+%% ------------------------------------------
+% Define Acceptable Thresholds
+% ------------------------------------------
+
+BER_threshold = 1e-3;   % 0.1% acceptable BER
+
+fail_idx = find(BER > BER_threshold, 1);
+
+if ~isempty(fail_idx)
+    fail_distance = distance(fail_idx);
+end
+
+%% ==========================================
+% PLOTS
+% ==========================================
+
+% ---- Clean Signal ----
+figure;
+plot(distance, signal_clean, 'b', 'LineWidth', 3);
+title('Clean Received Signal vs Distance');
+xlabel('Distance (Million km)');
+ylabel('Signal Strength');
+grid on;
+
+% ---- SNR ----
+figure;
+plot(distance, SNR_dB, 'k', 'LineWidth', 2);
+title('SNR vs Distance');
+xlabel('Distance (Million km)');
+ylabel('SNR (dB)');
+grid on;
+
+% ---- BER ----
+figure;
+semilogy(distance, BER, 'r', 'LineWidth', 2);
+hold on;
+yline(BER_threshold, '--k', 'BER Threshold');
+
+if ~isempty(fail_idx)
+    plot(fail_distance, BER(fail_idx), 'ro', ...
+        'MarkerFaceColor','r');
+end
+
+title('Bit Error Rate (BER) vs Distance');
+xlabel('Distance (Million km)');
+ylabel('BER (Log Scale)');
+grid on;
+
+%% ==========================================
+% DISPLAY RESULTS
+% ==========================================
+
+fprintf('\n=== DEEP SPACE COMMUNICATION ANALYSIS ===\n');
+
+if ~isempty(fail_idx)
+    fprintf('Communication becomes unreliable at: %.2f Million km\n', fail_distance);
+else
+    fprintf('Communication remains reliable over full distance range.\n');
+end
