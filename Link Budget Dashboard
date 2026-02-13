@@ -1,0 +1,92 @@
+%% Link Budget Dashboard - Fully Corrected
+clc; clear; close all;
+
+%% Step 1: Simulation Parameters
+T = 30;                % Total simulation time (s)
+Fs = 10;               % Updates per second
+t = 0:1/Fs:T;          % Time vector
+N = length(t);
+
+%% Step 2: Link Budget Parameters
+Pt = 30;               % Transmit power (dBm)
+Gt = 15;               % Transmit antenna gain (dBi)
+Gr = 10;               % Receive antenna gain (dBi)
+f = 2e9;               % Frequency (Hz)
+c = 3e8;               % Speed of light
+
+% Distance varying over time
+d = linspace(1e3, 2e4, N);  % 1 km to 20 km
+
+%% Step 3: Compute Link Budget Metrics
+PL = 20*log10(d) + 20*log10(f) - 147.55; % Free-space path loss in dB
+Pr = Pt + Gt + Gr - PL;                   % Received power in dBm
+NoiseFloor = -100;                        % Noise floor (dBm)
+SNR = Pr - NoiseFloor;                    % SNR in dB
+BER = 0.5*exp(-0.1*SNR);                  % Simple exponential BER model
+
+%% Step 4: Create Figure and Subplots
+figure('Color','w','Position',[100 100 1200 600]);
+
+% 1. Transmit Power
+subplot(2,3,1);
+plot(t, Pt*ones(1,N),'b','LineWidth',2);
+ylim([Pt-5 Pt+5]); grid on;
+xlabel('Time (s)'); ylabel('Pt (dBm)');
+title('Transmit Power');
+
+% 2. Path Loss
+subplot(2,3,2);
+pl_plot = plot(t, PL,'r','LineWidth',2);
+ylim([min(PL)-5 max(PL)+5]); grid on;
+xlabel('Time (s)'); ylabel('Path Loss (dB)');
+title('Path Loss');
+
+% 3. Antenna Gains
+subplot(2,3,3);
+hold on;
+plot(t, Gt*ones(1,N),'b','LineWidth',2); % Tx Gain
+plot(t, Gr*ones(1,N),'g','LineWidth',2); % Rx Gain
+ylim([min(Gr-5, Gt-5) max(Gt+5, Gr+5)]);
+xlabel('Time (s)'); ylabel('Gain (dBi)'); grid on;
+title('Antenna Gains');
+legend('Tx Gain','Rx Gain','Location','best');
+hold off;
+
+% 4. Received Power
+subplot(2,3,4);
+rp_plot = plot(t, Pr,'m','LineWidth',2);
+ylim([min(Pr)-5 max(Pr)+5]); grid on;
+xlabel('Time (s)'); ylabel('Pr (dBm)');
+title('Received Power');
+
+% 5. SNR
+subplot(2,3,5);
+snr_plot = plot(t, SNR,'k','LineWidth',2);
+ylim([min(SNR)-5 max(SNR)+5]); grid on;
+xlabel('Time (s)'); ylabel('SNR (dB)');
+title('SNR');
+
+% 6. BER
+subplot(2,3,6);
+ber_plot = plot(t, BER,'r','LineWidth',2);
+ylim([0 max(BER)*1.2]); grid on;
+xlabel('Time (s)'); ylabel('BER');
+title('Bit Error Rate');
+
+%% Step 5: Optional Real-Time Update Loop
+for k = 1:N
+    % Recalculate PL, Pr, SNR, BER to simulate real-time changes
+    PL(k) = 20*log10(d(k)) + 20*log10(f) - 147.55;
+    Pr(k) = Pt + Gt + Gr - PL(k);
+    SNR(k) = Pr(k) - NoiseFloor;
+    BER(k) = 0.5*exp(-0.1*SNR(k));
+    
+    % Update plots
+    set(pl_plot,'YData',PL);
+    set(rp_plot,'YData',Pr);
+    set(snr_plot,'YData',SNR);
+    set(ber_plot,'YData',BER);
+    
+    drawnow;
+    pause(0.05);
+end
