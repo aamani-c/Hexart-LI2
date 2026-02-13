@@ -1,0 +1,38 @@
+%% SNR Heatmap Visualization - Improved Gradient
+clc; clear; close all;
+
+%% Step 1: Parameters
+distances = 1:1:50;       % Distance in meters
+P_tx = 0.1:0.1:5;         % Transmit power in Watts
+N0 = 0.01;                % Noise power
+G = 1;                    % System gain
+
+%% Step 2: Compute SNR Matrix
+SNR = zeros(length(P_tx), length(distances));  % Pre-allocate
+for i = 1:length(P_tx)
+    for j = 1:length(distances)
+        d = distances(j);
+        Pt = P_tx(i);
+        L = d^2;                        % Path loss ~ d^2
+        SNR_linear = (Pt * G) / (N0 * L);
+        SNR(i,j) = 10*log10(SNR_linear);  % Convert to dB
+    end
+end
+
+%% Step 3: Plot Heatmap
+figure;
+imagesc(distances, P_tx, SNR);
+set(gca,'YDir','normal');  % Correct Y-axis
+xlabel('Distance (m)');
+ylabel('Transmit Power (W)');
+title('SNR Heatmap vs Distance and Transmit Power');
+
+% Step 3a: Adjust colormap and color axis
+colormap(turbo);           % Smooth rainbow gradient
+caxis([min(SNR(:)) max(SNR(:))]);  % Spread colors across actual SNR range
+colorbar;
+grid on; 
+
+%% Step 4: Overlay Contours
+hold on;
+contour(distances, P_tx, SNR, 10, 'LineColor', 'k');  % 10 contour levels
