@@ -1,0 +1,35 @@
+%% Moving Average Filtering - Smooth Version
+clc; clear; close all;
+
+%% Step 1: Signal Parameters
+Fs = 1000;             % Sampling frequency (Hz)
+T = 1;                 % Duration (s)
+t = 0:1/Fs:T-1/Fs;     % Time vector
+
+f_sig = 5;             % Signal frequency (Hz)
+A = 1;                 % Signal amplitude
+
+%% Step 2: Generate Original Signal
+signal_clean = A * sin(2*pi*f_sig*t);
+
+%% Step 3: Add Gaussian Noise
+noise_std = 0.5;                        % Standard deviation of noise
+signal_noisy = signal_clean + noise_std*randn(size(t));
+
+%% Step 4: Apply Moving Average Filter (Smooth Version)
+window_size = 50;                        % Larger window for smoother output
+signal_filtered = movmean(signal_noisy, window_size);
+
+%% Optional: Convolution-based smoothing (even smoother)
+% kernel = ones(1,window_size)/window_size;
+% signal_filtered = conv(signal_noisy, kernel, 'same');
+
+%% Step 5: Plot Signals
+figure('Color','w','Position',[100 100 1000 500]);
+plot(t, signal_clean,'b','LineWidth',2); hold on;
+plot(t, signal_noisy,'r','LineWidth',1);
+plot(t, signal_filtered,'g','LineWidth',2);
+grid on;
+xlabel('Time (s)'); ylabel('Amplitude');
+title('Moving Average Filtering: Original vs Noisy vs Smoothed');
+legend('Original Signal','Noisy Signal','Filtered Signal');
