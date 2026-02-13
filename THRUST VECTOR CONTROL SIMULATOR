@@ -1,0 +1,98 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+import time
+
+# ----------------------------
+# Physics constants
+# ----------------------------
+dt = 0.05
+g = 9.81
+
+x, y = 0, 0
+vx, vy = 0, 0
+
+trajectory_x = []
+trajectory_y = []
+velocity_data = []
+altitude_data = []
+
+plt.ion()
+
+fig = plt.figure(figsize=(10,8))
+ax_main = fig.add_subplot(211)
+ax_graph = fig.add_subplot(212)
+
+plt.subplots_adjust(bottom=0.3)
+
+ax_main.set_xlim(-200,200)
+ax_main.set_ylim(0,800)
+ax_main.set_facecolor("black")
+
+ax_graph.set_xlim(0,200)
+ax_graph.set_ylim(0,200)
+
+ax_main.axhline(0,color='green',linewidth=5)
+
+rocket, = ax_main.plot([],[],'wo')
+traj_line, = ax_main.plot([],[],color='cyan')
+vel_line, = ax_graph.plot([],[],color='red')
+alt_line, = ax_graph.plot([],[],color='blue')
+
+# Sliders
+ax_angle = plt.axes([0.25,0.2,0.5,0.03])
+ax_thrust = plt.axes([0.25,0.15,0.5,0.03])
+ax_mass = plt.axes([0.25,0.1,0.5,0.03])
+
+angle_slider = Slider(ax_angle,"Angle",-45,45,valinit=0)
+thrust_slider = Slider(ax_thrust,"Thrust",0,60000,valinit=25000)
+mass_slider = Slider(ax_mass,"Mass",500,5000,valinit=1000)
+
+# ----------------------------
+# Main Loop
+# ----------------------------
+while plt.fignum_exists(fig.number):
+
+    thrust = thrust_slider.val
+    angle = np.deg2rad(angle_slider.val)
+    mass = mass_slider.val
+
+    Fx = thrust*np.sin(angle)
+    Fy = thrust*np.cos(angle) - mass*g
+
+    ax_acc = Fx/mass
+    ay_acc = Fy/mass
+
+    vx += ax_acc*dt
+    vy += ay_acc*dt
+
+    x += vx*dt
+    y += vy*dt
+
+    if y < 0:
+        y = 0
+        vy = 0
+
+    speed = np.sqrt(vx**2 + vy**2)
+
+    trajectory_x.append(x)
+    trajectory_y.append(y)
+    velocity_data.append(speed)
+    altitude_data.append(y)
+
+    # ✅ FIXED LINE HERE
+    rocket.set_data([x], [y])
+
+    traj_line.set_data(trajectory_x, trajectory_y)
+    vel_line.set_data(range(len(velocity_data)), velocity_data)
+    alt_line.set_data(range(len(altitude_data)), altitude_data)
+
+    ax_graph.set_xlim(0,len(velocity_data))
+    ax_graph.set_ylim(0,max(200,max(velocity_data)+20))
+
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+    time.sleep(dt)
+
+plt.ioff()
