@@ -1,0 +1,139 @@
+import pygame
+import math
+
+pygame.init()
+pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN])
+
+WIDTH, HEIGHT = 1100, 800
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Space Docking Mission")
+
+clock = pygame.time.Clock()
+
+ship_x, ship_y = 150, HEIGHT//2
+vx, vy = 0, 0
+
+station_x, station_y = WIDTH-200, HEIGHT//2
+
+THRUST = 0.04
+MAX_DOCK_SPEED = 0.6
+
+fuel = 120
+fuel_burn = 0.15
+
+font = pygame.font.SysFont("consolas", 22)
+
+mission_over = False
+result_text = ""
+
+# NEW
+fuel_empty_time = None
+STOP_SPEED = 0.05
+STOP_TIME_REQUIRED = 2000   # milliseconds
+
+
+running = True
+
+while running:
+
+    clock.tick(30)
+    screen.fill((5,5,20))
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    keys = pygame.key.get_pressed()
+
+    # -------- THRUST --------
+    if not mission_over and fuel > 0:
+
+        if keys[pygame.K_UP]:
+            vy -= THRUST
+            fuel -= fuel_burn
+
+        if keys[pygame.K_DOWN]:
+            vy += THRUST
+            fuel -= fuel_burn
+
+        if keys[pygame.K_LEFT]:
+            vx -= THRUST
+            fuel -= fuel_burn
+
+        if keys[pygame.K_RIGHT]:
+            vx += THRUST
+            fuel -= fuel_burn
+
+    ship_x += vx
+    ship_y += vy
+
+    pygame.draw.rect(screen, (180,180,180),
+                     (station_x-40, station_y-40, 80, 80))
+
+    pygame.draw.rect(screen, (100,255,100),
+                     (station_x-20, station_y-20, 40, 40), 2)
+
+    pygame.draw.circle(screen, (100,200,255),
+                       (int(ship_x), int(ship_y)), 10)
+
+    speed = math.sqrt(vx*vx + vy*vy)
+
+    # ---------------- DOCK CHECK ----------------
+
+    if not mission_over:
+
+        close_x = abs(ship_x - station_x) < 18
+        close_y = abs(ship_y - station_y) < 18
+
+        if close_x and close_y:
+
+            if speed < MAX_DOCK_SPEED:
+                result_text = "PERFECT DOCK!"
+            else:
+                result_text = "CRASHED — TOO FAST!"
+
+            mission_over = True
+
+        # -------- FUEL EMPTY LOGIC --------
+
+        if fuel <= 0:
+
+            if fuel_empty_time is None:
+                fuel_empty_time = pygame.time.get_ticks()
+
+            # Check if ship has stopped
+            if speed < STOP_SPEED:
+
+                elapsed = pygame.time.get_ticks() - fuel_empty_time
+
+                if elapsed > STOP_TIME_REQUIRED:
+                    result_text = "🛰️ ADRIFT — NO FUEL, NO MOTION"
+                    mission_over = True
+
+            else:
+                # moving too fast with no fuel
+                result_text = "LOST IN SPACE"
+                mission_over = True
+
+        # drift off screen
+        if ship_x < -100 or ship_x > WIDTH+100 or ship_y < -100 or ship_y > HEIGHT+100:
+            mission_over = True
+            result_text = "DRIFTED INTO DEEP SPACE"
+
+    # ---------------- UI ----------------
+
+    speed_text = font.render(f"Speed: {round(speed,2)}", True, (255,255,255))
+    fuel_text = font.render(f"Fuel: {int(fuel)}", True, (255,255,255))
+
+    screen.blit(speed_text, (20,20))
+    screen.blit(fuel_text, (20,50))
+
+    if mission_over:
+        msg = font.render(result_text, True, (255,200,100))
+        screen.blit(msg, (WIDTH//2-180, 80))
+
+        vx, vy = 0, 0
+
+    pygame.display.flip()
+
+pygame.quit()
