@@ -1,0 +1,56 @@
+%% Solar Interference Model - Clean Visualization
+clc; clear; close all;
+
+%% Step 1: Simulation Parameters
+T = 10;                  % Total simulation time in seconds
+Fs = 1000;               % Sampling frequency (samples/sec)
+t = 0:1/Fs:T-1/Fs;       % Time vector
+
+% Communication signal parameters
+signal_power = 1;         % Normal signal amplitude
+solar_noise_power = 5;    % Noise power during solar burst (reduced for visualization)
+
+%% Step 2: Generate Communication Signal
+f_signal = 2;            % Communication frequency (Hz)
+comm_signal = sqrt(signal_power) * sin(2*pi*f_signal*t);
+
+%% Step 3: Define Solar Noise Burst Events
+num_bursts = 2;                  % Number of solar bursts
+burst_duration = 0.5;            % Duration of each burst in seconds
+burst_times = [3, 7];            % Start times of bursts in seconds
+
+solar_noise = zeros(size(t));    % Initialize noise vector
+
+for i = 1:num_bursts
+    idx = (t >= burst_times(i)) & (t < burst_times(i)+burst_duration);
+    solar_noise(idx) = sqrt(solar_noise_power) * randn(1, sum(idx));
+end
+
+%% Step 4: Simulate Received Signal
+received_signal = comm_signal + solar_noise;
+
+%% Step 5: Detect Communication Blackouts
+threshold = sqrt(signal_power);  % Threshold for blackout detection
+blackout = abs(solar_noise) > threshold;
+
+%% Step 6: Visualization - Received Signal vs Original Signal
+figure;
+
+subplot(2,1,1);
+plot(t, comm_signal, 'g--', 'LineWidth',1.5); hold on;
+plot(t, received_signal, 'b'); 
+plot(t(blackout), received_signal(blackout), 'ro', 'MarkerSize', 4);
+xlabel('Time [s]');
+ylabel('Signal Amplitude');
+title('Received Signal with Solar Interference (Blackouts Highlighted)');
+legend('Original Signal','Received Signal','Blackout Points');
+grid on;
+ylim([-5 5]);  % Limit Y-axis for clear visualization
+
+%% Step 7: Visualization - Noise Power Over Time
+subplot(2,1,2);
+plot(t, solar_noise.^2, 'm','LineWidth',1.5);
+xlabel('Time [s]');
+ylabel('Noise Power');
+title('Solar Noise Burst Power Over Time');
+grid on;
