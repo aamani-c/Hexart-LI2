@@ -1,0 +1,29 @@
+%% Doppler Shift Simulation - Spacecraft Moving Away (No Saving)
+clc; clear; close all;
+
+%% Step 1: Constants and Time Vector
+c = 3e8;            % Speed of light (m/s)
+f_c = 2e9;          % Carrier frequency (Hz)
+T = 600;             % Total simulation time (seconds)
+Fs = 1;             % Sampling frequency (1 Hz)
+t = 0:Fs:T;         % Time vector
+
+%% Step 2: Spacecraft Motion
+v0 = 0;             % Initial velocity (m/s)
+a = 50;             % Constant acceleration moving away (m/s^2)
+v = v0 + a*t;       % Velocity over time
+
+%% Step 3: Compute Doppler Shift
+fd = f_c .* (v ./ c);   % Doppler shift in Hz
+f_obs = f_c - fd;       % Observed frequency in Hz
+
+% Frequency deviation relative to carrier in kHz
+freq_dev_kHz = fd / 1e3;
+
+%% Step 4: Plot Doppler Shift (Visible)
+figure('Color','w');       % White background
+plot(t, freq_dev_kHz, 'b', 'LineWidth', 2);  % Doppler shift in kHz
+grid on;
+xlabel('Time (s)', 'FontSize', 12);
+ylabel('Doppler Shift (kHz)', 'FontSize', 12);
+title('Doppler Shift Simulation - Spacecraft Moving Away', 'FontSize', 14);
