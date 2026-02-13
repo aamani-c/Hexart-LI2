@@ -1,0 +1,91 @@
+import pygame
+import math
+import random
+
+pygame.init()
+
+WIDTH, HEIGHT = 1000, 800
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Build Your Solar System")
+
+clock = pygame.time.Clock()
+
+G = 0.2
+STAR_MASS = 20000
+
+center = (WIDTH//2, HEIGHT//2)
+
+planets = []
+
+
+class Planet:
+    def __init__(self, x, y):
+
+        self.x = x
+        self.y = y
+
+        dx = x - center[0]
+        dy = y - center[1]
+
+        distance = math.sqrt(dx*dx + dy*dy)
+
+        # Auto orbital velocity
+        orbital_speed = math.sqrt(G * STAR_MASS / distance)
+
+        # perpendicular direction
+        self.vx = -dy / distance * orbital_speed
+        self.vy = dx / distance * orbital_speed
+
+        self.radius = random.randint(4,8)
+        self.color = (
+            random.randint(100,255),
+            random.randint(100,255),
+            random.randint(100,255)
+        )
+
+    def update(self):
+
+        dx = center[0] - self.x
+        dy = center[1] - self.y
+
+        r = math.sqrt(dx*dx + dy*dy)
+
+        ax = G * STAR_MASS * dx / r**3
+        ay = G * STAR_MASS * dy / r**3
+
+        self.vx += ax
+        self.vy += ay
+
+        self.x += self.vx
+        self.y += self.vy
+
+    def draw(self):
+        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
+
+
+running = True
+
+while running:
+
+    clock.tick(60)
+    screen.fill((0,0,20))
+
+    # draw star
+    pygame.draw.circle(screen, (255,220,100), center, 20)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        # CLICK TO SPAWN PLANET
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mx, my = pygame.mouse.get_pos()
+            planets.append(Planet(mx, my))
+
+    for planet in planets:
+        planet.update()
+        planet.draw()
+
+    pygame.display.flip()
+
+pygame.quit()
