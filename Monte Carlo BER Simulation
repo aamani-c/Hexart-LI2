@@ -1,0 +1,52 @@
+%% Monte Carlo BER Simulation for BPSK in AWGN
+clc; clear; close all;
+
+%% Step 1: Simulation Parameters
+N = 1e5;                % Number of bits
+EbN0_dB = 0:10;         % Eb/N0 range in dB
+BER = zeros(1,length(EbN0_dB));  % Pre-allocate BER array
+
+%% Step 2: Generate Random Bits
+bits = randi([0 1], 1, N);  % Row vector of 0s and 1s
+
+%% Step 3: BPSK Modulation
+symbols = 2*bits - 1;  % Map 0->-1, 1->+1
+
+%% Step 4: Monte Carlo Simulation
+for k = 1:length(EbN0_dB)
+    
+    % Convert Eb/N0 from dB to linear
+    EbN0 = 10^(EbN0_dB(k)/10);
+    
+    % Compute noise standard deviation for AWGN
+    noise_std = sqrt(1/(2*EbN0));
+    
+    % Generate AWGN noise
+    noise = noise_std * randn(1, N);
+    
+    % Received signal
+    received = symbols + noise;
+    
+    % Detection: Threshold at 0
+    detected_bits = received >= 0;
+    
+    % Count errors
+    errors = sum(bits ~= detected_bits);
+    
+    % Calculate BER
+    BER(k) = errors / N;
+end
+
+%% Step 5: Theoretical BER for BPSK
+theoretical_BER = 0.5 * erfc(sqrt(10.^(EbN0_dB/10)));
+
+%% Step 6: Plot BER vs SNR
+figure;
+semilogy(EbN0_dB, BER, 'o-', 'LineWidth',1.5); hold on;
+semilogy(EbN0_dB, theoretical_BER, 's--', 'LineWidth',1.5);
+grid on;
+xlabel('Eb/N0 [dB]');
+ylabel('Bit Error Rate (BER)');
+title('Monte Carlo BER Simulation for BPSK in AWGN');
+legend('Simulated BER', 'Theoretical BER');
+axis([0 10 1e-5 1]);  % Set axis limits for better view
