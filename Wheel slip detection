@@ -1,0 +1,20 @@
+int encoderPin = 2;
+int imuMove = 0; // simulated IMU distance
+volatile int ticks = 0;
+
+void count() { ticks++; }
+
+void setup() {
+  Serial.begin(9600);
+  attachInterrupt(digitalPinToInterrupt(encoderPin), count, RISING);
+}
+
+void loop() {
+  int wheelDist = ticks;
+  imuMove = analogRead(A0); // fake IMU input
+
+  if (wheelDist > imuMove + 20)
+    Serial.println("SLIP DETECTED");
+
+  delay(500);
+}
