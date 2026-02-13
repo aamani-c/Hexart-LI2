@@ -1,0 +1,100 @@
+import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.widgets import Slider
+from mpl_toolkits.mplot3d import Axes3D
+
+# -----------------------------
+# Earth radius
+# -----------------------------
+R = 6371
+
+# -----------------------------
+# Initial parameters
+# -----------------------------
+altitude_init = 2000
+inclination_init = 30
+speed_init = 1
+sat_count_init = 4
+
+# -----------------------------
+# Create figure
+# -----------------------------
+fig = plt.figure(figsize=(10,8))
+ax = fig.add_subplot(111, projection='3d')
+plt.subplots_adjust(bottom=0.3)
+
+ax.set_xlim(-15000,15000)
+ax.set_ylim(-15000,15000)
+ax.set_zlim(-15000,15000)
+ax.set_facecolor("black")
+ax.set_title("Interactive Satellite Orbit Simulator")
+
+# -----------------------------
+# Draw Earth
+# -----------------------------
+u = np.linspace(0,2*np.pi,100)
+v = np.linspace(0,np.pi,100)
+
+earth_x = R*np.outer(np.cos(u),np.sin(v))
+earth_y = R*np.outer(np.sin(u),np.sin(v))
+earth_z = R*np.outer(np.ones(np.size(u)),np.cos(v))
+
+ax.plot_surface(earth_x,earth_y,earth_z,
+                color='blue',alpha=0.6)
+
+# -----------------------------
+# Sliders
+# -----------------------------
+ax_alt = plt.axes([0.25,0.20,0.5,0.03])
+ax_inc = plt.axes([0.25,0.15,0.5,0.03])
+ax_speed = plt.axes([0.25,0.10,0.5,0.03])
+ax_count = plt.axes([0.25,0.05,0.5,0.03])
+
+alt_slider = Slider(ax_alt,"Altitude (km)",500,8000,valinit=altitude_init)
+inc_slider = Slider(ax_inc,"Inclination (deg)",0,90,valinit=inclination_init)
+speed_slider = Slider(ax_speed,"Speed",0.5,5,valinit=speed_init)
+count_slider = Slider(ax_count,"Satellites",1,12,valinit=sat_count_init,valstep=1)
+
+# -----------------------------
+# Create satellite scatter (initial)
+# -----------------------------
+sat_scatter = ax.scatter([],[],[],color='red',s=80)
+
+# -----------------------------
+# Update function
+# -----------------------------
+def update(frame):
+
+    altitude = alt_slider.val
+    inclination = np.deg2rad(inc_slider.val)
+    speed = speed_slider.val
+    sat_count = int(count_slider.val)
+
+    orbit_radius = R + altitude
+    t = frame * 0.02 * speed
+
+    xs, ys, zs = [], [], []
+
+    for i in range(sat_count):
+        angle = t + (2*np.pi/sat_count)*i
+
+        x = orbit_radius*np.cos(angle)
+        y = orbit_radius*np.sin(angle)*np.cos(inclination)
+        z = orbit_radius*np.sin(angle)*np.sin(inclination)
+
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    sat_scatter._offsets3d = (xs, ys, zs)
+
+    return sat_scatter,
+
+ani = FuncAnimation(fig, update,
+                    interval=30,
+                    blit=False)
+
+plt.show()
