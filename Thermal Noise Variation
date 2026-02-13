@@ -1,0 +1,26 @@
+%% Thermal Noise Variation - Visible Exponential BER
+clc; clear; close all;
+
+%% Parameters
+T_min = 250; T_max = 350; N = 100;
+T = linspace(T_min, T_max, N);
+
+Pt = 10;                % Transmit power (arbitrary units)
+NoiseBase = 1;          % Base noise
+
+% Increase effect of temperature on noise to make curve exponential
+Noise = NoiseBase * (T/250).^3;  % cubic growth with temperature
+
+%% SNR and BER
+SNR = Pt ./ Noise;                  % Linear SNR
+BER = 0.5 * exp(-SNR);             % Steeper exponential for visible effect
+
+%% Plot
+figure('Color','w','Position',[100 100 800 500]);
+plot(T, BER,'r','LineWidth',2);
+grid on;
+xlabel('Temperature (K)');
+ylabel('BER');
+title('BER vs Temperature due to Thermal Noise');
+set(gca,'YScale','log');  % Log scale to show exponential behavior
+ylim([1e-5 1]);
