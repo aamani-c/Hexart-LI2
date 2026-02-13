@@ -1,0 +1,114 @@
+clc;
+clear;
+close all;
+
+%% Constants
+c = 299792;                 % Speed of light (km/s)
+R_earth = 149.6e6;          % Earth's orbital radius (km)
+mu_sun = 1.327e11;          % Sun gravitational parameter (km^3/s^2)
+
+T_earth = 365*24*3600;      % Earth orbital period (s)
+
+dt = 6*3600;                % 6 hour step
+sim_days = 400;
+t = 0:dt:sim_days*24*3600;
+
+%% Spacecraft definitions (different orbits)
+num_sc = 3;
+
+R_sc = [180e6, 220e6, 260e6];    % orbital radii (km)
+T_sc = 2*pi*sqrt(R_sc.^3/mu_sun);
+
+%% Communication parameters
+EbN0_ref_dB = 20;    % Reference SNR at 1e6 km
+ref_dist = 1e6;      % Reference distance (km)
+
+BER = zeros(num_sc, length(t));
+SNR_dB = zeros(num_sc, length(t));
+
+%% Setup Figure
+figure('Color','k');
+
+subplot(1,2,1);
+hold on;
+axis equal;
+set(gca,'Color','k','XColor','w','YColor','w');
+title('Multi-Spacecraft Network','Color','w');
+
+% Sun
+plot(0,0,'yo','MarkerFaceColor','y','MarkerSize',12);
+
+theta = linspace(0,2*pi,500);
+plot(R_earth*cos(theta),R_earth*sin(theta),'b--');
+
+earth_plot = plot(0,0,'bo','MarkerFaceColor','b');
+
+sc_plots = gobjects(num_sc,1);
+colors = ['r','g','c'];
+for i = 1:num_sc
+    plot(R_sc(i)*cos(theta),R_sc(i)*sin(theta),[colors(i) '--']);
+    sc_plots(i) = plot(0,0,[colors(i) 'o'],'MarkerFaceColor',colors(i));
+end
+
+subplot(1,2,2);
+hold on;
+grid on;
+set(gca,'Color','k','XColor','w','YColor','w');
+title('Communication Quality (BER)','Color','w');
+xlabel('Time (days)','Color','w');
+ylabel('BER (log scale)','Color','w');
+set(gca,'YScale','log');
+
+ber_plots = gobjects(num_sc,1);
+for i = 1:num_sc
+    ber_plots(i) = plot(NaN,NaN,colors(i),'LineWidth',2);
+end
+
+legend('SC-1','SC-2','SC-3','TextColor','w');
+
+%% Simulation Loop
+for k = 1:length(t)
+
+    % Earth position
+    theta_earth = 2*pi*t(k)/T_earth;
+    earth_pos = [R_earth*cos(theta_earth), R_earth*sin(theta_earth)];
+
+    subplot(1,2,1);
+    set(earth_plot,'XData',earth_pos(1),'YData',earth_pos(2));
+
+    for i = 1:num_sc
+
+        % Spacecraft position
+        theta_sc = 2*pi*t(k)/T_sc(i);
+        sc_pos = [R_sc(i)*cos(theta_sc), R_sc(i)*sin(theta_sc)];
+
+        set(sc_plots(i),'XData',sc_pos(1),'YData',sc_pos(2));
+
+        % Distance to Earth
+        d = norm(sc_pos - earth_pos);
+
+        % Path loss model (inverse square)
+        SNR_dB(i,k) = EbN0_ref_dB - 20*log10(d/ref_dist);
+
+        EbN0_lin = 10^(SNR_dB(i,k)/10);
+
+        % BER for BPSK
+        BER(i,k) = 0.5 * erfc(sqrt(EbN0_lin));
+
+    end
+
+    % Update BER plot
+    subplot(1,2,2);
+    for i = 1:num_sc
+        set(ber_plots(i),...
+            'XData', t(1:k)/86400,...
+            'YData', BER(i,1:k));
+    end
+
+    drawnow;
+end
+
+%% Display summary
+for i = 1:num_sc
+    fprintf('Spacecraft %d Minimum BER: %.2e\n',i,min(BER(i,:)));
+end
