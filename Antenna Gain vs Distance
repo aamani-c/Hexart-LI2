@@ -1,0 +1,37 @@
+clc;
+clear;
+close all;
+
+%% Distance
+d_km = linspace(1, 100, 1000);
+
+%% Base SNR model (drops with distance)
+base_SNR_dB = 20 - 0.3*d_km;   % Linear decay with distance
+
+%% Antenna Gains
+G_values = [0 5 10 15];
+
+figure;
+hold on;
+grid on;
+
+for G = G_values
+    
+    % Gain directly improves SNR
+    SNR_dB = base_SNR_dB + G;
+    
+    SNR_linear = 10.^(SNR_dB/10);
+    
+    BER = 0.5 * erfc(sqrt(SNR_linear));
+    
+    semilogy(d_km, BER, 'LineWidth', 2);
+end
+
+xlabel('Distance (km)');
+ylabel('Bit Error Rate (BER)');
+title('BER vs Distance for Different Antenna Gains');
+legend('0 dB','5 dB','10 dB','15 dB');
+ylim([1e-5 1]);
+xlim([0 100]);
+
+drawnow;
