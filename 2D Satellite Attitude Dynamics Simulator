@@ -1,0 +1,50 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---- Simulation parameters ----
+I = 5.0          # moment of inertia (kg*m^2) - arbitrary
+dt = 0.01        # time step (s)
+T = 10.0         # total time (s)
+N = int(T/dt)
+
+# ---- State variables ----
+theta = 0.0      # angle (rad)
+omega = 0.0      # angular velocity (rad/s)
+
+# ---- Control ----
+target_theta = np.deg2rad(45)   # target angle = 45 degrees
+Kp = 2.0                        # proportional gain
+Kd = 0.5                        # damping
+
+# ---- Logging ----
+time_log = []
+theta_log = []
+omega_log = []
+
+for i in range(N):
+    t = i * dt
+
+    # PD controller torque
+    error = target_theta - theta
+    tau = Kp * error - Kd * omega   # control torque
+
+    # Dynamics
+    alpha = tau / I                 # angular acceleration
+    omega += alpha * dt
+    theta += omega * dt
+
+    # Log
+    time_log.append(t)
+    theta_log.append(np.rad2deg(theta))
+    omega_log.append(omega)
+
+# ---- Plot ----
+plt.figure()
+plt.plot(time_log, theta_log, label="Angle (deg)")
+plt.axhline(45, linestyle="--", label="Target (45°)")
+plt.xlabel("Time (s)")
+plt.ylabel("Angle (deg)")
+plt.title("2D Attitude Dynamics Simulator (PD Control)")
+plt.legend()
+plt.grid(True)
+plt.show()
