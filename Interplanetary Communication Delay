@@ -1,0 +1,86 @@
+clc;
+clear;
+close all;
+
+%% Constants
+c = 299792;                  % Speed of light (km/s)
+R_earth = 149.6e6;           % Earth orbital radius (km)
+R_mars = 227.9e6;            % Mars orbital radius (km)
+
+T_earth = 365*24*3600;       % Earth orbital period (s)
+T_mars = 687*24*3600;        % Mars orbital period (s)
+
+dt = 3600;                   % Time step (1 hour)
+sim_time = 300*24*3600;      % Simulate 300 days
+
+t = 0:dt:sim_time;
+
+%% Preallocate arrays
+delay = zeros(size(t));
+distance = zeros(size(t));
+
+%% Figure Setup
+figure('Color','k');
+subplot(1,2,1);
+hold on;
+axis equal;
+set(gca,'Color','k','XColor','w','YColor','w');
+title('Interplanetary Communication Delay Simulation','Color','w');
+xlabel('X (km)','Color','w');
+ylabel('Y (km)','Color','w');
+
+% Plot Sun
+plot(0,0,'yo','MarkerSize',12,'MarkerFaceColor','y');
+
+% Plot Orbits
+theta = linspace(0,2*pi,500);
+plot(R_earth*cos(theta), R_earth*sin(theta),'b--');
+plot(R_mars*cos(theta), R_mars*sin(theta),'r--');
+
+earth_plot = plot(0,0,'bo','MarkerFaceColor','b');
+mars_plot = plot(0,0,'ro','MarkerFaceColor','r');
+sc_plot = plot(0,0,'wo','MarkerFaceColor','w');
+
+subplot(1,2,2);
+hold on;
+set(gca,'Color','k','XColor','w','YColor','w');
+title('Signal Delay vs Time','Color','w');
+xlabel('Time (days)','Color','w');
+ylabel('One-Way Delay (minutes)','Color','w');
+delay_plot = plot(0,0,'c','LineWidth',2);
+
+%% Simulation Loop
+for k = 1:length(t)
+
+    % Orbital positions
+    theta_earth = 2*pi*t(k)/T_earth;
+    theta_mars = 2*pi*t(k)/T_mars;
+
+    earth_pos = [R_earth*cos(theta_earth), R_earth*sin(theta_earth)];
+    mars_pos = [R_mars*cos(theta_mars), R_mars*sin(theta_mars)];
+
+    % Spacecraft traveling radially from Earth toward Mars orbit
+    sc_pos = earth_pos + (mars_pos-earth_pos)*(k/length(t));
+
+    % Distance Earth to spacecraft
+    distance(k) = norm(sc_pos - earth_pos);
+
+    % Communication delay
+    delay(k) = distance(k)/c;  % seconds
+
+    % --- Update animation ---
+    subplot(1,2,1);
+    set(earth_plot,'XData',earth_pos(1),'YData',earth_pos(2));
+    set(mars_plot,'XData',mars_pos(1),'YData',mars_pos(2));
+    set(sc_plot,'XData',sc_pos(1),'YData',sc_pos(2));
+
+    subplot(1,2,2);
+    set(delay_plot,'XData',t(1:k)/86400,...
+                   'YData',delay(1:k)/60);
+
+    drawnow;
+end
+
+%% Final Output
+fprintf('\nMaximum One-Way Delay: %.2f minutes\n',max(delay)/60);
+fprintf('Maximum Round-Trip Delay: %.2f minutes\n',2*max(delay)/60);
