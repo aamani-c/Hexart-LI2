@@ -1,0 +1,116 @@
+clc;
+clear;
+close all;
+
+%% Constants
+c = 299792;                   % km/s
+R_earth = 149.6e6;            % Earth orbit radius (km)
+R_mars = 227.9e6;             % Mars orbit radius (km)
+R_relay_orbit = 5000;         % Relay orbit radius around Mars (km)
+
+T_earth = 365*24*3600;
+T_mars = 687*24*3600;
+
+dt = 12*3600;                 % 12-hour steps
+sim_days = 600;
+t = 0:dt:sim_days*24*3600;
+
+%% Communication reference
+SNR_ref_dB = 30;              % SNR at reference distance
+d_ref = 1e6;                  % 1 million km reference
+
+%% Preallocate
+BER_direct = zeros(size(t));
+BER_relay = zeros(size(t));
+
+%% Setup Figure
+figure('Color','k');
+
+subplot(1,2,1);
+hold on;
+axis equal;
+set(gca,'Color','k','XColor','w','YColor','w');
+title('Deep Space Relay System','Color','w');
+
+% Plot Sun
+plot(0,0,'yo','MarkerFaceColor','y','MarkerSize',12);
+
+theta = linspace(0,2*pi,400);
+plot(R_earth*cos(theta),R_earth*sin(theta),'b--');
+plot(R_mars*cos(theta),R_mars*sin(theta),'r--');
+
+earth_plot = plot(0,0,'bo','MarkerFaceColor','b');
+mars_plot = plot(0,0,'ro','MarkerFaceColor','r');
+relay_plot = plot(0,0,'co','MarkerFaceColor','c');
+rover_plot = plot(0,0,'mo','MarkerFaceColor','m');
+
+subplot(1,2,2);
+hold on;
+grid on;
+set(gca,'Color','k','XColor','w','YColor','w');
+set(gca,'YScale','log');
+xlabel('Time (days)','Color','w');
+ylabel('BER','Color','w');
+title('Communication Quality Comparison','Color','w');
+
+h_direct = plot(NaN,NaN,'r','LineWidth',2);
+h_relay = plot(NaN,NaN,'c','LineWidth',2);
+
+legend('Direct Earth–Rover','Relay Link','TextColor','w');
+
+%% Simulation Loop
+for k = 1:length(t)
+
+    % Orbital angles
+    theta_earth = 2*pi*t(k)/T_earth;
+    theta_mars = 2*pi*t(k)/T_mars;
+
+    earth_pos = [R_earth*cos(theta_earth), R_earth*sin(theta_earth)];
+    mars_pos = [R_mars*cos(theta_mars), R_mars*sin(theta_mars)];
+
+    % Rover fixed on Mars surface
+    rover_pos = mars_pos;
+
+    % Relay orbiting Mars
+    theta_relay = 2*pi*k/200;
+    relay_pos = mars_pos + ...
+        [R_relay_orbit*cos(theta_relay), R_relay_orbit*sin(theta_relay)];
+
+    % Update animation
+    subplot(1,2,1);
+    set(earth_plot,'XData',earth_pos(1),'YData',earth_pos(2));
+    set(mars_plot,'XData',mars_pos(1),'YData',mars_pos(2));
+    set(relay_plot,'XData',relay_pos(1),'YData',relay_pos(2));
+    set(rover_plot,'XData',rover_pos(1),'YData',rover_pos(2));
+
+    %% --- Direct Link ---
+    d_direct = norm(rover_pos - earth_pos);
+    SNR_direct_dB = SNR_ref_dB - 20*log10(d_direct/d_ref);
+    EbN0_direct = 10^(SNR_direct_dB/10);
+    BER_direct(k) = 0.5*erfc(sqrt(EbN0_direct));
+
+    %% --- Relay Link ---
+    d1 = norm(rover_pos - relay_pos);
+    d2 = norm(relay_pos - earth_pos);
+
+    SNR1_dB = SNR_ref_dB - 20*log10(d1/d_ref);
+    SNR2_dB = SNR_ref_dB - 20*log10(d2/d_ref);
+
+    SNR_relay_dB = min(SNR1_dB,SNR2_dB);
+
+    EbN0_relay = 10^(SNR_relay_dB/10);
+    BER_relay(k) = 0.5*erfc(sqrt(EbN0_relay));
+
+    %% Update BER Plot
+    subplot(1,2,2);
+    set(h_direct,'XData',t(1:k)/86400,...
+                 'YData',BER_direct(1:k));
+    set(h_relay,'XData',t(1:k)/86400,...
+                'YData',BER_relay(1:k));
+
+    drawnow;
+end
+
+%% Results
+fprintf('\nAverage Direct BER: %.2e\n',mean(BER_direct));
+fprintf('Average Relay BER: %.2e\n',mean(BER_relay));
