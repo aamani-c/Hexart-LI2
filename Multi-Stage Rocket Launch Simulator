@@ -1,0 +1,159 @@
+import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")   # IMPORTANT for terminal animation
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.widgets import Slider
+import matplotlib.patches as patches
+
+# -----------------------------
+# Physics Constants
+# -----------------------------
+g = 9.81
+dt = 0.05
+
+# Stage parameters
+stage1_mass = 300000
+stage2_mass = 80000
+stage1_burn_time = 50
+stage2_burn_time = 70
+stage1_burn_rate = 2500
+stage2_burn_rate = 800
+
+# -----------------------------
+# Initial State
+# -----------------------------
+time = 0
+velocity = 0
+height = 0
+stage = 1
+mass = stage1_mass + stage2_mass
+stage_falling = False
+orbit_inserted = False
+
+times, heights, velocities, accelerations = [], [], [], []
+
+# -----------------------------
+# Figure Setup
+# -----------------------------
+fig = plt.figure(figsize=(14,7))
+
+ax_rocket = fig.add_subplot(121)
+ax_graph = fig.add_subplot(222)
+ax_acc = fig.add_subplot(224)
+
+plt.subplots_adjust(bottom=0.25)
+
+# Rocket View Settings
+ax_rocket.set_xlim(0,10)
+ax_rocket.set_ylim(0,200000)
+ax_rocket.set_xticks([])
+ax_rocket.set_title("Rocket Launch Simulation")
+
+# Earth Surface
+earth = patches.Rectangle((0,0),10,5000,color="green")
+ax_rocket.add_patch(earth)
+
+# Space background
+ax_rocket.set_facecolor("black")
+for _ in range(120):
+    ax_rocket.plot(np.random.uniform(0,10),
+                   np.random.uniform(5000,200000),
+                   'w.',markersize=2)
+
+# Rocket Body
+rocket_body = patches.Rectangle((4.5,0),1,4000,color="white")
+ax_rocket.add_patch(rocket_body)
+
+# Flame
+flame = patches.Polygon([[4.5,0],[5.5,0],[5,-2000]],color="orange")
+ax_rocket.add_patch(flame)
+
+# Stage piece
+stage_piece = patches.Rectangle((4.5,0),1,2000,color="gray")
+
+# -----------------------------
+# Slider
+# -----------------------------
+ax_slider = plt.axes([0.25,0.1,0.5,0.03])
+thrust_slider = Slider(ax_slider,"Thrust",
+                       1_000_000,5_000_000,
+                       valinit=3_000_000)
+
+# -----------------------------
+# Update Function
+# -----------------------------
+def update(frame):
+    global time, velocity, height, mass
+    global stage, stage_falling, orbit_inserted
+
+    thrust = thrust_slider.val
+
+    # Stage logic
+    if stage == 1 and time < stage1_burn_time:
+        mass -= stage1_burn_rate * dt
+
+    elif stage == 1:
+        stage = 2
+        mass = stage2_mass
+        stage_falling = True
+        print("🚀 Stage 1 Separation!")
+
+    elif stage == 2 and time < stage1_burn_time + stage2_burn_time:
+        mass -= stage2_burn_rate * dt
+
+    else:
+        thrust = 0
+
+    # Orbit insertion condition
+    if height > 150000 and not orbit_inserted:
+        thrust = 0
+        velocity = 0
+        orbit_inserted = True
+        print("🛰 Orbit Inserted!")
+
+    # Physics update
+    acceleration = (thrust - mass*g) / mass
+    velocity += acceleration * dt
+    height += velocity * dt
+    time += dt
+
+    times.append(time)
+    heights.append(height)
+    velocities.append(velocity)
+    accelerations.append(acceleration)
+
+    # Move rocket
+    rocket_body.set_y(height)
+
+    # Animate flame
+    flame.set_xy([[4.5,height],
+                  [5.5,height],
+                  [5,height - np.random.uniform(1500,3500)]])
+
+    # Stage falling animation
+    if stage_falling:
+        stage_piece.set_y(height - 30000 - time*600)
+        ax_rocket.add_patch(stage_piece)
+
+    # Update graphs
+    ax_graph.clear()
+    ax_graph.plot(times, heights, label="Height (m)")
+    ax_graph.plot(times, velocities, label="Velocity (m/s)")
+    ax_graph.legend()
+    ax_graph.set_title("Height & Velocity")
+
+    ax_acc.clear()
+    ax_acc.plot(times, accelerations, color="red")
+    ax_acc.set_title("Acceleration")
+
+    return rocket_body, flame
+
+# -----------------------------
+# Run Animation
+# -----------------------------
+ani = FuncAnimation(fig, update,
+                    interval=30,
+                    blit=False)
+
+plt.show()
