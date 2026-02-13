@@ -1,0 +1,110 @@
+import pygame
+import math
+import random
+
+pygame.init()
+
+WIDTH, HEIGHT = 1100, 850
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Chaos Solar System")
+
+clock = pygame.time.Clock()
+
+G = 0.15
+STAR_MASS = 25000
+
+center = (WIDTH//2, HEIGHT//2)
+
+planets = []
+
+
+class Planet:
+    def __init__(self, x, y):
+
+        self.x = x
+        self.y = y
+
+        dx = x - center[0]
+        dy = y - center[1]
+
+        distance = math.sqrt(dx*dx + dy*dy)
+
+        orbital_speed = math.sqrt(G * STAR_MASS / distance)
+
+        self.vx = -dy / distance * orbital_speed
+        self.vy = dx / distance * orbital_speed
+
+        # ⭐ RANDOM MASS (VERY IMPORTANT)
+        self.mass = random.randint(20,120)
+
+        self.radius = int(self.mass ** 0.3) + 2
+
+        self.color = (
+            random.randint(120,255),
+            random.randint(120,255),
+            random.randint(120,255)
+        )
+
+    def update(self):
+
+        # gravity from star
+        dx = center[0] - self.x
+        dy = center[1] - self.y
+        r = math.sqrt(dx*dx + dy*dy)
+
+        ax = G * STAR_MASS * dx / r**3
+        ay = G * STAR_MASS * dy / r**3
+
+        # ⭐ gravity from OTHER planets
+        for other in planets:
+
+            if other == self:
+                continue
+
+            dx = other.x - self.x
+            dy = other.y - self.y
+
+            dist = math.sqrt(dx*dx + dy*dy)
+
+            if dist < 5:
+                continue
+
+            force = G * other.mass / dist**2
+
+            ax += force * dx / dist
+            ay += force * dy / dist
+
+        self.vx += ax
+        self.vy += ay
+
+        self.x += self.vx
+        self.y += self.vy
+
+    def draw(self):
+        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
+
+
+running = True
+
+while running:
+
+    clock.tick(60)
+    screen.fill((0,0,15))
+
+    pygame.draw.circle(screen, (255,220,120), center, 22)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mx, my = pygame.mouse.get_pos()
+            planets.append(Planet(mx, my))
+
+    for planet in planets:
+        planet.update()
+        planet.draw()
+
+    pygame.display.flip()
+
+pygame.quit()
