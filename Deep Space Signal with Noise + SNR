@@ -1,0 +1,97 @@
+clc;
+clear;
+close all;
+
+%% ==========================================
+%  DEEP SPACE SIGNAL WITH NOISE (SEPARATE)
+% ===========================================
+
+% Initial signal strength
+S0 = 100;
+
+% Attenuation constant
+k = 0.005;
+
+% Distance range (Million km)
+distance = 0:1:2000;
+
+% Clean signal
+signal_clean = S0 * exp(-k * distance);
+
+%% ------------------------------------------
+% Add Gaussian Noise
+% ------------------------------------------
+
+noise_std = 5;
+noise = noise_std * randn(size(distance));
+
+signal_noisy = signal_clean + noise;
+
+%% ------------------------------------------
+% Compute SNR
+% ------------------------------------------
+
+signal_power = signal_clean.^2;
+noise_power = noise.^2;
+
+SNR_linear = signal_power ./ noise_power;
+SNR_dB = 10 * log10(SNR_linear);
+
+% SNR Threshold
+SNR_threshold = 3;
+
+fail_idx = find(SNR_dB < SNR_threshold, 1);
+fail_distance = distance(fail_idx);
+
+%% ==========================================
+%  PLOT 1 — CLEAN SIGNAL ONLY
+% ===========================================
+
+figure;
+plot(distance, signal_clean, 'b', 'LineWidth', 3);
+title('Clean Deep Space Signal');
+xlabel('Distance (Million km)');
+ylabel('Signal Strength');
+grid on;
+
+%% ==========================================
+%  PLOT 2 — NOISY SIGNAL ONLY
+% ===========================================
+
+figure;
+plot(distance, signal_noisy, 'r');
+title('Noisy Deep Space Signal');
+xlabel('Distance (Million km)');
+ylabel('Signal Strength');
+grid on;
+
+%% ==========================================
+%  PLOT 3 — SNR
+% ===========================================
+
+figure;
+plot(distance, SNR_dB, 'k', 'LineWidth', 2);
+hold on;
+yline(SNR_threshold, '--r', 'Minimum SNR Threshold');
+
+if ~isempty(fail_idx)
+    plot(fail_distance, SNR_dB(fail_idx), 'ro', ...
+        'MarkerFaceColor','r');
+end
+
+title('Signal-to-Noise Ratio (SNR)');
+xlabel('Distance (Million km)');
+ylabel('SNR (dB)');
+grid on;
+
+%% ==========================================
+% DISPLAY RESULTS
+% ===========================================
+
+fprintf('=== COMMUNICATION ANALYSIS ===\n');
+
+if ~isempty(fail_idx)
+    fprintf('Communication fails at: %.2f Million km\n', fail_distance);
+else
+    fprintf('Signal remains above threshold for entire range.\n');
+end
