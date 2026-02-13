@@ -1,0 +1,38 @@
+%% 3D Signal Strength Surface Plot
+clc; clear; close all;
+
+%% Step 1: Parameters
+d_min = 1e3;         % Minimum distance (m)
+d_max = 2e4;         % Maximum distance (m)
+Nd = 50;             % Number of distance points
+d = linspace(d_min, d_max, Nd);   % Distance vector
+
+f_min = 1e9;         % Min frequency (Hz)
+f_max = 5e9;         % Max frequency (Hz)
+Nf = 50;             % Number of frequency points
+f = linspace(f_min, f_max, Nf);   % Frequency vector
+
+Pt = 30;             % Transmit power (dBm)
+Gt = 15;             % Transmit antenna gain (dBi)
+Gr = 10;             % Receive antenna gain (dBi)
+
+%% Step 2: Create Meshgrid
+[D,F] = meshgrid(d,f);   % D = distance grid, F = frequency grid
+
+%% Step 3: Compute Free-space Path Loss (FSPL)
+PL = 20*log10(D) + 20*log10(F) - 147.55;   % Path loss in dB
+
+%% Step 4: Compute Received Power
+Pr = Pt + Gt + Gr - PL;   % Received power in dBm
+
+%% Step 5: Plot 3D Surface
+figure('Color','w','Position',[100 100 900 600]);
+surf(D,F,Pr); 
+shading interp;          % Smooth color transition
+colorbar;                % Show color scale
+xlabel('Distance (m)'); 
+ylabel('Frequency (Hz)');
+zlabel('Received Power (dBm)');
+title('3D Signal Strength Surface Plot');
+view(45,30);             % Adjust view angle
+grid on;
