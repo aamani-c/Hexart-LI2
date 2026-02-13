@@ -1,0 +1,121 @@
+clc;
+clear;
+close all;
+
+%% ==========================================
+% REALISTIC DEEP SPACE COMMUNICATION MODEL
+% ==========================================
+
+% Physical constants
+c = 3e8;                    % Speed of light (m/s)
+k = 1.38e-23;               % Boltzmann constant
+T = 290;                    % System temperature (Kelvin)
+
+% Carrier frequency (X-band deep space)
+f = 8e9;                    % 8 GHz
+lambda = c / f;
+
+% Transmitter parameters
+Pt = 1000;                  % 1000 Watts transmit power
+Gt = 1e4;                   % High gain antenna (linear)
+Gr = 1e4;                   % High gain antenna (linear)
+
+% Communication bandwidth
+B = 1e6;                    % 1 MHz bandwidth
+
+% Noise Power (Thermal noise)
+noise_power = k * T * B;    % kTB
+
+% Distance range (1M km to 300M km)
+d = linspace(1e9, 3e11, 1000);
+
+%% ==========================================
+% Friis Transmission Equation
+% ==========================================
+
+Pr = Pt .* Gt .* Gr .* (lambda ./ (4*pi*d)).^2;
+
+%% ==========================================
+% SNR Calculation
+% ==========================================
+
+SNR_linear = Pr ./ noise_power;
+SNR_dB = 10 * log10(SNR_linear);
+
+%% ==========================================
+% BER for BPSK
+% ==========================================
+
+BER = 0.5 * erfc(sqrt(SNR_linear));
+
+%% ==========================================
+% Failure Threshold
+% ==========================================
+
+BER_threshold = 1e-5;
+
+fail_idx = find(BER > BER_threshold, 1);
+
+if ~isempty(fail_idx)
+    fail_distance = d(fail_idx) / 1e9;
+else
+    fail_distance = NaN;
+end
+
+%% ==========================================
+% PLOT 1 — RECEIVED POWER
+% ==========================================
+
+figure('Name','Received Power','NumberTitle','off');
+plot(d/1e9, 10*log10(Pr), 'LineWidth',2);
+title('Received Power vs Distance');
+xlabel('Distance (Million km)');
+ylabel('Received Power (dBW)');
+grid on;
+
+%% ==========================================
+% PLOT 2 — SNR
+% ==========================================
+
+figure('Name','SNR','NumberTitle','off');
+plot(d/1e9, SNR_dB, 'LineWidth',2);
+title('SNR vs Distance');
+xlabel('Distance (Million km)');
+ylabel('SNR (dB)');
+grid on;
+
+%% ==========================================
+% PLOT 3 — BER
+% ==========================================
+
+figure('Name','BER','NumberTitle','off');
+semilogy(d/1e9, BER, 'LineWidth',2);
+hold on;
+yline(BER_threshold, '--', 'BER Threshold');
+
+if ~isnan(fail_distance)
+    plot(fail_distance, BER(fail_idx), 'ro', 'MarkerFaceColor','r');
+end
+
+title('Bit Error Rate (BER) vs Distance');
+xlabel('Distance (Million km)');
+ylabel('Bit Error Rate');
+grid on;
+
+%% ==========================================
+% DISPLAY RESULTS
+% ==========================================
+
+disp(' ');
+disp('=== REALISTIC DEEP SPACE LINK ANALYSIS ===');
+
+if ~isnan(fail_distance)
+    fprintf('Communication becomes unreliable at %.2f Million km\n', fail_distance);
+else
+    disp('Communication remains reliable over full range.');
+end
+
+fprintf('Initial SNR: %.2f dB\n', SNR_dB(1));
+fprintf('Final SNR: %.2f dB\n', SNR_dB(end));
+
+disp('Simulation complete.');
