@@ -1,0 +1,21 @@
+int ldrPin = A0;
+int ledPin = 8;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int lightVal = analogRead(ldrPin);   // 0–1023
+  Serial.println(lightVal);
+
+  // Threshold: lower value = less light (more dust/shadow)
+  if (lightVal < 400) {     
+    digitalWrite(ledPin, HIGH);   // Dust/shadow detected
+  } else {
+    digitalWrite(ledPin, LOW);    // Panel receiving good light
+  }
+
+  delay(300);
+}
