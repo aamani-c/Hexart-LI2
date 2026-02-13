@@ -1,0 +1,27 @@
+#include <Servo.h>
+Servo panel;
+
+int ldrL = A0;
+int ldrR = A1;
+int pos = 90;        // start centered
+int deadband = 40;  // ignore tiny differences
+
+void setup() {
+  panel.attach(9);
+  panel.write(pos);
+}
+
+void loop() {
+  int left  = analogRead(ldrL);
+  int right = analogRead(ldrR);
+  int diff = left - right;
+
+  if (diff > deadband) {        // more light on left
+    pos = min(pos + 2, 180);
+  } else if (diff < -deadband) { // more light on right
+    pos = max(pos - 2, 0);
+  }
+
+  panel.write(pos);
+  delay(20);
+}
