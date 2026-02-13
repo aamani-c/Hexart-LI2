@@ -1,0 +1,86 @@
+%% Real-Time Mission Control Dashboard - Corrected Version
+clc; clear; close all;
+
+%% Step 1: Simulation Parameters
+T = 30;                 % Total simulation time in seconds
+Fs = 10;                % Updates per second
+t = 0:1/Fs:T;           % Time vector
+N = length(t);
+
+%% Step 2: Spacecraft Parameters
+x_pos = linspace(0, 10, N);    % X positions of spacecraft
+y_pos = 5 * ones(1, N);        % Y positions fixed
+vel = linspace(0, 500, N);     % Velocity in m/s
+
+%% Step 3: Communication Parameters
+SNR = linspace(10, 30, N);     % Signal-to-noise ratio in dB
+BER = 0.01 * exp(-0.1*t);      % Bit error rate (simulated)
+
+%% Step 4: Create Figure and Subplots
+figure('Color','w','Position',[100 100 1200 600]);
+
+% Subplot 1: Spacecraft Animation
+subplot(2,3,1);
+sc_plot = plot(x_pos(1), y_pos(1),'ro','MarkerSize',20,'MarkerFaceColor','r');
+xlim([0 10]); ylim([0 10]); grid on;
+title('Spacecraft Animation');
+
+% Subplot 2: Signal SNR Graph
+subplot(2,3,2);
+sig_plot = plot(t(1), SNR(1),'b','LineWidth',2);
+xlim([0 T]); ylim([0 40]); grid on;
+xlabel('Time (s)'); ylabel('SNR (dB)');
+title('Signal SNR');
+
+% Subplot 3: BER Graph
+subplot(2,3,3);
+ber_plot = plot(t(1), BER(1),'r','LineWidth',2);
+xlim([0 T]); ylim([0 0.05]); grid on;
+xlabel('Time (s)'); ylabel('BER');
+title('Bit Error Rate');
+
+% Subplot 4: Alarm Indicator
+subplot(2,3,4);
+alarm_rect = rectangle('Position',[0 0 1 1],'FaceColor','g');
+xlim([0 1]); ylim([0 1]); axis off;
+title('Alarm Indicator');
+
+% Subplot 5 & 6: Telemetry Data
+subplot(2,3,[5 6]);
+telemetry_txt = text(0.1,0.8,['Velocity: ',num2str(vel(1)),' m/s | SNR: ',num2str(SNR(1),'%.1f'),' dB | BER: ',num2str(BER(1),'%.4f')],'FontSize',14);
+xlim([0 1]); ylim([0 1]); axis off;
+title('Telemetry Data');
+
+%% Step 5: Real-Time Update Loop
+for k = 2:N
+    pause(0.05);  % Controls animation speed
+    
+    % Optional: simulate temporary BER spike to trigger alarm
+    if t(k) >= 10 && t(k) <= 15
+        BER(k) = 0.04; % BER above threshold
+    else
+        BER(k) = 0.01 * exp(-0.1*t(k)); % Normal BER
+    end
+    
+    % Update spacecraft position
+    set(sc_plot,'XData',x_pos(k),'YData',y_pos(k));
+    
+    % Update SNR graph
+    set(sig_plot,'XData',t(1:k),'YData',SNR(1:k));
+    
+    % Update BER graph
+    set(ber_plot,'XData',t(1:k),'YData',BER(1:k));
+    
+    % Update Alarm indicator
+    if BER(k) > 0.02
+        set(alarm_rect,'FaceColor','r');
+    else
+        set(alarm_rect,'FaceColor','g');
+    end
+    
+    % Update Telemetry data
+    set(telemetry_txt,'String',['Velocity: ',num2str(vel(k),'%.1f'),...
+        ' m/s | SNR: ',num2str(SNR(k),'%.1f'),' dB | BER: ',num2str(BER(k),'%.4f')]);
+    
+    drawnow;
+end
