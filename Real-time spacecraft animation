@@ -1,0 +1,108 @@
+clc;
+clear;
+close all;
+
+%% ==========================================
+%   REAL-TIME SPACECRAFT COMMUNICATION SIM
+% ==========================================
+
+% Communication parameters
+S0 = 100;          % Initial signal strength
+k = 0.005;         % Attenuation constant
+noise_std = 5;
+noise_variance = noise_std^2;
+
+BER_threshold = 1e-3;
+
+max_distance = 2000;   % Million km
+step = 5;              % Movement step
+
+%% ==========================================
+% Create Figure
+% ==========================================
+
+figure('Name','Deep Space Mission Simulation','NumberTitle','off');
+
+% ----- Space View -----
+subplot(2,2,[1 3]);
+hold on;
+grid on;
+title('Spacecraft Moving Away from Earth');
+xlabel('Distance (Million km)');
+ylabel('Position');
+
+xlim([0 max_distance]);
+ylim([-1 1]);
+
+% Draw Earth
+plot(0,0,'bo','MarkerSize',12,'MarkerFaceColor','b');
+text(0,0.2,'Earth');
+
+% Spacecraft initial position
+spacecraft = plot(0,0,'ro','MarkerSize',8,'MarkerFaceColor','r');
+
+% Status text
+status_text = text(max_distance*0.6,0.8,'','FontSize',12,'Color','k');
+
+%% ----- Signal Plot -----
+subplot(2,2,2);
+h_signal = animatedline('Color','b','LineWidth',2);
+title('Signal Strength');
+xlabel('Distance (Million km)');
+ylabel('Signal');
+grid on;
+xlim([0 max_distance]);
+ylim([0 S0]);
+
+%% ----- BER Plot -----
+subplot(2,2,4);
+h_ber = animatedline('Color','r','LineWidth',2);
+title('Bit Error Rate (BER)');
+xlabel('Distance (Million km)');
+ylabel('BER (Log Scale)');
+set(gca,'YScale','log');
+grid on;
+xlim([0 max_distance]);
+ylim([1e-6 1]);
+
+%% ==========================================
+% Animation Loop
+% ==========================================
+
+for d = 0:step:max_distance
+    
+    % Update spacecraft position
+    set(spacecraft,'XData',d,'YData',0);
+    
+    % Signal attenuation
+    signal = S0 * exp(-k * d);
+    
+    % Compute SNR
+    signal_power = signal^2;
+    SNR_linear = signal_power / noise_variance;
+    
+    % Compute BER
+    BER = 0.5 * erfc(sqrt(SNR_linear));
+    
+    % Update signal plot
+    subplot(2,2,2);
+    addpoints(h_signal, d, signal);
+    
+    % Update BER plot
+    subplot(2,2,4);
+    addpoints(h_ber, d, BER);
+    
+    % Communication status
+    subplot(2,2,[1 3]);
+    if BER > BER_threshold
+        set(status_text,'String','COMMUNICATION LOST','Color','r');
+        set(spacecraft,'MarkerFaceColor','k');
+    else
+        set(status_text,'String','Communication Stable','Color','g');
+    end
+    
+    drawnow;
+    pause(0.02);   % Animation speed
+end
+
+disp('Mission simulation complete.');
