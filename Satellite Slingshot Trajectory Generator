@@ -1,0 +1,118 @@
+import math
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+# ---------------- CONSTANTS ----------------
+G = 0.8
+planet_mass = 5100
+planet_radius = 25
+
+dt = 0.05
+physics_steps = 30   # controls simulation speed
+
+
+# ---------------- MOVING PLANET ----------------
+planet_x = -250
+planet_y = 0
+planet_vx = 1.4   # Try setting this to 0 later — VERY powerful experiment
+
+
+# ---------------- SPACECRAFT ----------------
+x, y = -400, -120
+
+#  STUDENTS ONLY CHANGE THESE
+approach_speed = 5.0
+flyby_distance = -120
+
+vx = approach_speed
+vy = 0
+
+xs, ys = [x], [y]
+
+incoming_logged = False
+incoming_speed = None   
+
+
+# ---------------- GRAPH ----------------
+fig, ax = plt.subplots(figsize=(7,7))
+
+ax.set_xlim(-500, 500)
+ax.set_ylim(-500, 500)
+ax.set_aspect('equal')
+
+planet_draw = plt.Circle((planet_x, planet_y), planet_radius)
+ax.add_patch(planet_draw)
+
+craft_dot, = ax.plot([], [], 'o', markersize=6)
+trail, = ax.plot([], [], lw=2)
+
+ax.set_title("Gravity Assist Simulator")
+
+
+# ---------------- UPDATE ----------------
+def update(frame):
+    global x, y, vx, vy, planet_x
+    global incoming_logged, incoming_speed
+
+    for _ in range(physics_steps):
+
+        # Move the planet
+        planet_x += planet_vx * dt
+        planet_draw.center = (planet_x, planet_y)
+
+        dx = planet_x - x
+        dy = planet_y - y
+
+        r = math.sqrt(dx*dx + dy*dy)
+
+        # Gravity
+        ax_g = G * planet_mass * dx / r**3
+        ay_g = G * planet_mass * dy / r**3
+
+        vx += ax_g * dt
+        vy += ay_g * dt
+
+        x += vx * dt
+        y += vy * dt
+
+        xs.append(x)
+        ys.append(y)
+
+        # ⭐ Log TRUE incoming speed
+        if not incoming_logged and r < 180:
+            incoming_speed = math.sqrt(vx*vx + vy*vy)
+            print(f"Incoming speed: {round(incoming_speed,2)}")
+            incoming_logged = True
+
+        # Stop once spacecraft clearly leaves
+        if x > 300:
+
+            exit_speed = math.sqrt(vx*vx + vy*vy)
+            print(f"Exit speed: {round(exit_speed,2)}")
+
+            if incoming_speed is not None:
+                delta = exit_speed - incoming_speed
+                print(f"Speed change: {round(delta,2)}")
+
+                if delta > 0:
+                    print("🚀 Gravity assist successful!")
+                else:
+                    print("No speed gain — adjust flyby distance!")
+
+            ani.event_source.stop()
+            break
+
+    craft_dot.set_data([x], [y])
+    trail.set_data(xs, ys)
+
+    return craft_dot, trail, planet_draw
+
+
+ani = FuncAnimation(
+    fig,
+    update,
+    interval=30,
+    blit=True
+)
+
+plt.show()
