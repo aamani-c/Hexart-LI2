@@ -1,0 +1,67 @@
+clc;
+clear;
+close all;
+
+%% ==============================
+%  DEEP SPACE SIGNAL ATTENUATION
+%  Complete Engineering Model
+% ===============================
+
+% Initial signal strength
+S0 = 100;                % arbitrary units
+
+% Attenuation constants (compare two systems)
+k_highPower = 0.003;     % Strong communication system
+k_lowPower  = 0.007;     % Weak communication system
+
+% Distance range (Million km)
+distance = 0:1:2000;
+
+%% Compute Signal Strength
+signal_high = S0 * exp(-k_highPower * distance);
+signal_low  = S0 * exp(-k_lowPower  * distance);
+
+%% Define Failure Threshold
+threshold = 10;   % Minimum operational signal strength
+
+% Find failure distance for high power system
+fail_idx_high = find(signal_high < threshold, 1);
+fail_dist_high = distance(fail_idx_high);
+
+% Find failure distance for low power system
+fail_idx_low = find(signal_low < threshold, 1);
+fail_dist_low = distance(fail_idx_low);
+
+%% ==============================
+%  PLOT RESULTS
+% ===============================
+
+figure;
+
+plot(distance, signal_high, 'b', 'LineWidth', 2);
+hold on;
+plot(distance, signal_low, 'r', 'LineWidth', 2);
+
+% Plot threshold line
+yline(threshold, '--k', 'Minimum Operational Signal');
+
+% Mark failure points
+plot(fail_dist_high, signal_high(fail_idx_high), 'bo', ...
+    'MarkerFaceColor','b');
+
+plot(fail_dist_low, signal_low(fail_idx_low), 'ro', ...
+    'MarkerFaceColor','r');
+
+title('Deep Space Signal Attenuation Analysis');
+xlabel('Distance (Million km)');
+ylabel('Signal Strength');
+legend('High Power System','Low Power System','Failure Threshold');
+grid on;
+
+%% ==============================
+%  DISPLAY ENGINEERING RESULTS
+% ===============================
+
+fprintf('=== ENGINEERING RESULTS ===\n');
+fprintf('High Power System fails at: %.2f Million km\n', fail_dist_high);
+fprintf('Low Power System fails at: %.2f Million km\n', fail_dist_low);
